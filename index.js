@@ -70,16 +70,16 @@ io.on('connection', (socket) => {
         }
     })
 
-    socket.on("voice", function (data) {
-        var newData = data.audio.split(";");
-        newData[0] = "data:audio/ogg;";
-        newData = newData[0] + newData[1];
+    // socket.on("voice", function (data) {
+    //     var newData = data.audio.split(";");
+    //     newData[0] = "data:audio/ogg;";
+    //     newData = newData[0] + newData[1];
 
-        if(io.sockets.adapter.rooms.get(data.roomId)) {
-            socket.to(data.roomId).emit("send", newData);
-        }
+    //     if(io.sockets.adapter.rooms.get(data.roomId)) {
+    //         socket.broadcast.to(data.roomId).emit("send", newData);
+    //     }
 
-    });
+    // });
 
 })
 
