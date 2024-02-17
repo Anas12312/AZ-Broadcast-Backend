@@ -1,9 +1,10 @@
-module.exports = (data, socket, io) => {
+module.exports = (data, socket, io, usernames) => {
     socket.leave(data.roomId)
         if(io.sockets.adapter.rooms.get(data.roomId)) {
             io.to(data.roomId).emit('member-left', {
                 member: socket.id,
-                members: Array.from(io.sockets.adapter.rooms.get(data.roomId))
+                memberUsername: usernames[socket.id].username,
+                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)).map(u => usernames[u].username)
             })
         }
 }
