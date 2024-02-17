@@ -1,5 +1,4 @@
-module.exports = (socket, io) => {+
-    console.log("a7a")
+module.exports = (socket, io, usernames) => {
     const roomId = parseInt(Math.random() * 1000000).toString()
     socket.join(roomId)
     socket.emit("created", {
@@ -7,6 +6,6 @@ module.exports = (socket, io) => {+
     })
     socket.emit("room-created", {
         roomId,
-        members: Array.from(io.sockets.adapter.rooms.get(roomId))
+        members: Array.from(io.sockets.adapter.rooms.get(roomId)).map(u=> usernames[u].username)
     })
 }
