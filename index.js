@@ -26,6 +26,25 @@ io.on('connection', (socket) => {
     socket.on('join', (data) => { joinRoom(data, socket, io) })
     socket.on('leave', (data) => { leaveRoom(data, socket, io) })
     socket.on("message_send", (data) => { sendMessage(data, socket, io) })
+    socket.on('change_name', (data) => { 
+
+        //Change Username in memory
+        usernames[socket.id] = {
+            ...usernames[socket.id],
+            username: data.username
+        };
+
+        const rooms = Array.from(io.sockets.adapter.rooms);
+
+        rooms.forEach(room => {
+            if(Array.from(room[1]).includes(socket.id)) {
+                io.to(room[0]).emit('username_changed', {
+                    members: Array.from(io.sockets.adapter.rooms.get(room[0])).map(u => usernames[u].username)
+                })
+            }    
+        })
+
+    })
 })
 
 const port = process.env.PORT || 4000;
