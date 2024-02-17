@@ -15,19 +15,13 @@ const io = new socket.Server(server, {
         methods: ['GET', 'POST']
     }
 })
-function findRooms() {
-    var availableRooms = [];
-    var rooms = io.sockets.adapter.rooms;
-    if (rooms) {
-        for (var room in rooms) {
-            if (!rooms[room].hasOwnProperty(room)) {
-                availableRooms.push(room);
-            }
+const usernames = { }
+io.on('connection', (socket) => {
+    if(!usernames[socket.id]) {
+        usernames[socket.id] = {
+            username : "USER" + parseInt(Math.random() * 1000).toString()
         }
     }
-    return availableRooms;
-}
-io.on('connection', (socket) => {
     socket.on('create', () => { createRoom(socket, io) })
     socket.on('join', (data) => { joinRoom(data, socket, io) })
     socket.on('leave', (data) => { leaveRoom(data, socket, io) })
