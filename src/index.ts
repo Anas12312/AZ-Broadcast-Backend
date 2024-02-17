@@ -16,13 +16,13 @@ const io = new socket.Server(server, {
     }
 })
 
+const socketState: SocketState = {
+    users: {},
+    rooms: []
+}
+
 // On Connection
 const onConnection = (socket: Socket) => {
-    
-    const socketState: SocketState = {
-        users: {},
-        rooms: []
-    }
     
     // Init user socket state
     if(!socketState.users[socket.id]) {
