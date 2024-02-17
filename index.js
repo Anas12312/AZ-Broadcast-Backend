@@ -22,10 +22,11 @@ io.on('connection', (socket) => {
             username : "USER" + parseInt(Math.random() * 1000).toString()
         }
     }
-    socket.on('create', () => { createRoom(socket, io) })
-    socket.on('join', (data) => { joinRoom(data, socket, io) })
-    socket.on('leave', (data) => { leaveRoom(data, socket, io) })
-    socket.on("message_send", (data) => { sendMessage(data, socket, io) })
+
+    socket.on('create', () => { createRoom(socket, io, usernames) })
+    socket.on('join', (data) => { joinRoom(data, socket, io, usernames) })
+    socket.on('leave', (data) => { leaveRoom(data, socket, io, usernames) })
+    socket.on("message_send", (data) => { sendMessage(data, socket, io, usernames) })
     socket.on('change_name', (data) => { 
 
         //Change Username in memory
