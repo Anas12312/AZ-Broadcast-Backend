@@ -83,6 +83,8 @@ io.on('connection', (socket) => {
 
 })
 
-server.listen(3000, (server)=> {
-    console.log("Server Running on port: " + 3000)
+const port = process.env.PORT || 4000;
+
+server.listen(port, (server)=> {
+    console.log("Server Running on port: " + port)
 })
