@@ -21,7 +21,7 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
                 username: users[id].username,
                 image: users[id].image
             }
-        }); 
+        });
 
         socket.emit("room-created", {
             roomId,
@@ -30,52 +30,58 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
     })
 
     socket.on("join", (data) => {
-        if(io.sockets.adapter.rooms.get(data.roomId)) {
-            socket.join(data.roomId)
-            socket.emit("joined", {
-                message: "done",
-                roomId: data.roomId
-            })
-            io.to(data.roomId).emit('member-joined', {
-                member: socket.id,
-                memberUsername: users[socket.id].username,
-                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
-                    return {
-                        username: users[u].username,
-                        image: users[u].image
-                    }
+        if (data.roomId) {
+            if (io.sockets.adapter.rooms.get(data.roomId)) {
+                socket.join(data.roomId)
+                socket.emit("joined", {
+                    message: "done",
+                    roomId: data.roomId
                 })
-            })
-        }else {
-            socket.emit("error", {
-                message: "This Room Doesn't Exist"
-            })
+                io.to(data.roomId).emit('member-joined', {
+                    member: socket.id,
+                    memberUsername: users[socket.id].username,
+                    members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
+                        return {
+                            username: users[u].username,
+                            image: users[u].image
+                        }
+                    })
+                })
+            } else {
+                socket.emit("error", {
+                    message: "This Room Doesn't Exist"
+                })
+            }
         }
     })
 
     socket.on("leave", (data) => {
-        socket.leave(data.roomId)
-        if (io.sockets.adapter.rooms.get(data.roomId)) {
-            io.to(data.roomId).emit('member-left', {
-                member: socket.id,
-                memberUsername: users[socket.id].username,
-                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
-                    return {
-                        username: users[u].username,
-                        image: users[u].image
-                    }
+        if (data.roomId) {
+            socket.leave(data.roomId)
+            if (io.sockets.adapter.rooms.get(data.roomId)) {
+                io.to(data.roomId).emit('member-left', {
+                    member: socket.id,
+                    memberUsername: users[socket.id].username,
+                    members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
+                        return {
+                            username: users[u].username,
+                            image: users[u].image
+                        }
+                    })
                 })
-            })
+            }
         }
     })
 
     socket.on("message_send", (data) => {
-        if(Array.from(io.sockets.adapter.rooms.get(data.roomId)!).includes(socket.id)) {
-            socket.to(data.roomId).emit("message_recieved", {
-                message: data.message,
-                sender: socket.id,
-                senderUsername: users[socket.id].username,
-            })
+        if (data.roomId) {
+            if (Array.from(io.sockets.adapter.rooms.get(data.roomId)!).includes(socket.id)) {
+                socket.to(data.roomId).emit("message_recieved", {
+                    message: data.message,
+                    sender: socket.id,
+                    senderUsername: users[socket.id].username,
+                })
+            }
         }
     })
 }
