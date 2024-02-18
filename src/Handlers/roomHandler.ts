@@ -16,7 +16,12 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
 
         const room = io.sockets.adapter.rooms.get(roomId)!;
 
-        const members = Array.from(room).map(id => users[id].username); 
+        const members = Array.from(room).map(id => {
+            return {
+                username: users[id].username,
+                image: users[id].image
+            }
+        }); 
 
         socket.emit("room-created", {
             roomId,
@@ -34,7 +39,12 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
             io.to(data.roomId).emit('member-joined', {
                 member: socket.id,
                 memberUsername: users[socket.id].username,
-                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => users[u].username)
+                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
+                    return {
+                        username: users[u].username,
+                        image: users[u].image
+                    }
+                })
             })
         }else {
             socket.emit("error", {
@@ -49,7 +59,12 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
             io.to(data.roomId).emit('member-left', {
                 member: socket.id,
                 memberUsername: users[socket.id].username,
-                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => users[u].username)
+                members: Array.from(io.sockets.adapter.rooms.get(data.roomId)!).map(u => {
+                    return {
+                        username: users[u].username,
+                        image: users[u].image
+                    }
+                })
             })
         }
     })
