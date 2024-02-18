@@ -16,12 +16,12 @@ const io = new socket_io_1.default.Server(server, {
         methods: ['GET', 'POST']
     }
 });
+const socketState = {
+    users: {},
+    rooms: []
+};
 // On Connection
 const onConnection = (socket) => {
-    const socketState = {
-        users: {},
-        rooms: []
-    };
     // Init user socket state
     if (!socketState.users[socket.id]) {
         socketState.users[socket.id] = {
