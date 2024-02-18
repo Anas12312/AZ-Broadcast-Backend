@@ -4,9 +4,13 @@ import http from 'http'
 import { SocketState } from './types/SocketState';
 import { roomHandler } from './Handlers/roomHandler';
 import { userHandler } from './Handlers/userHandler';
+import imageRouter from './Routers/ImageRouter';
 
 
 const app = express();
+
+app.use(imageRouter);
+
 const server = http.createServer(app);
 
 const io = new socket.Server(server, {
