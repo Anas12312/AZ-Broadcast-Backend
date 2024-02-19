@@ -85,19 +85,13 @@ export const roomHandler = (io: Server, socket: Socket, state: SocketState) => {
 
     socket.on("message_send", (data) => {
         if (data.roomId) {
-            const room = io.sockets.adapter.rooms.get(data.roomId)
-            if (room) {
-                if (room!.has(socket.id)) {
+            if (io.sockets.adapter.rooms.get(data.roomId)) {
 
-                    socket.to(data.roomId).emit("message_recieved", {
-                        message: data.message,
-                        sender: socket.id,
-                        senderUsername: users[socket.id].username,
-                    })
-
-                }
-            } else {
-                console.log('2ontor 2blkash');
+                socket.to(data.roomId).emit("message_recieved", {
+                    message: data.message,
+                    sender: socket.id,
+                    senderUsername: users[socket.id].username,
+                })
             }
         }
     })
