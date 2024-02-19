@@ -10,7 +10,6 @@ const imageRouter = Router();
 
 imageRouter.post('/upload/', fileUpload(), async (req, res) => {
     try {
-
         const img = req.files!.file as any
         cloudinary.v2.config({
             cloud_name: 'dknhrwczx',
@@ -23,9 +22,11 @@ imageRouter.post('/upload/', fileUpload(), async (req, res) => {
             cloudinary.v2.uploader.upload_stream((error, uploadResult) => {
                 return resolve(uploadResult);
             }).end(img.data);
-        }) 
+        }) as any;
 
-        res.send((result as any).url);
+
+        // console.log(result.url);
+        res.send({image:result.url});
     } catch (e) {
         console.log(e);
         res.status(500).send(e)
