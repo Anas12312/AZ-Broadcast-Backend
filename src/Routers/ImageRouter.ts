@@ -1,5 +1,4 @@
 import { Request, Response, Router } from "express";
-import * as ftp from 'basic-ftp'
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import fileUpload from 'express-fileupload'
@@ -34,5 +33,8 @@ imageRouter.post('/upload/', fileUpload(), async (req, res) => {
     }
 })
 
+imageRouter.get('/hello', async (req ,res) => {
+    
+})
 
 export default imageRouter;
