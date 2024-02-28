@@ -6,6 +6,7 @@ import { roomHandler } from './Handlers/roomHandler';
 import { userHandler } from './Handlers/userHandler';
 import imageRouter from './Routers/ImageRouter';
 import cors from 'cors'
+import { Stream, pipeline } from 'stream';
 
 const app = express();
 app.use(express.json())
@@ -23,33 +24,26 @@ const io = new socket.Server(server, {
     }
 })
 
-const socketState: SocketState = {
-    users: {},
-    rooms: []
-}
-
 // On Connection
 const onConnection = (socket: Socket) => {
-    
+
     socket.on('init', (data) => {
         
         let user: User = {
             username: data.username,
-            image: ''
+            image: data.image
         };
 
-        if(data.image) {
-            user.image = data.image;
-        }
-
-        socketState.users[socket.id] = user;
+        socket.data = user;
     })
 
-    roomHandler(io, socket, socketState);
-    userHandler(io, socket, socketState);
+    roomHandler(io, socket);
+    userHandler(io, socket);
 }
 
-io.on("connection", onConnection)
+(async () => {
+    io.on("connection", onConnection)
+})();
 
 const port = process.env.PORT || 4000;
 
