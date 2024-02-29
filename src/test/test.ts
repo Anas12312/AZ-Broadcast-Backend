@@ -114,10 +114,18 @@ const app = express();
 // //     });
 
 
+import ffmpeg from 'fluent-ffmpeg'
+
 const throttle = new Throttle({ rate: 100000 / 8 });
 
-const youtubeLive = fs.createReadStream('test.m4a').pipe(throttle)
-// const youtubeLive = ytdl('https://www.youtube.com/watch?v=VV8rRZwkBtI', { filter: 'audioonly' }).pipe(throttle);
+const info = ytdl.getInfo('https://www.youtube.com/watch?v=VV8rRZwkBtI').then(info => {
+
+})
+
+// const youtubeLive = fs.createReadStream('test.m4a').pipe(throttle)
+const youtubeLive = ytdl('https://www.youtube.com/watch?v=VV8rRZwkBtI', { quality: 'highestaudio' }).pipe(throttle);
+
+ffmpeg(youtubeLive);  
 
 // ytdl.chooseFormat([])
 
@@ -138,7 +146,7 @@ app.get('/stream', (req, res) => {
     // res.writeHead(200, headers);
 
     res.set({
-        "Content-Type": "audio/m4a",
+        "Content-Type": "audio/x-m4a",
         "Transfer-Encoding": "chunked",
     }).status(200);
 
