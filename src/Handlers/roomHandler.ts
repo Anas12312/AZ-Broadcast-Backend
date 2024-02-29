@@ -151,6 +151,7 @@ export const roomHandler = (io: Server, socket: Socket) => {
             message: data.message,
             sender: socket.id,
             senderUsername: socket.data.username,
+            sernderImage: socket.data.image
         })
 
         // if (data.roomId) {
