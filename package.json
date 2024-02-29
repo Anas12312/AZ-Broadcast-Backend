@@ -26,6 +26,7 @@
   "dependencies": {
     "@dropb/ffprobe": "^3.0.0",
     "@types/cors": "^2.8.17",
+    "@types/uuid": "^9.0.8",
     "cloudinary": "^2.0.1",
     "cors": "^2.8.5",
     "express": "^4.18.2",
@@ -33,6 +34,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "socket.io": "^4.7.4",
     "stream-throttle": "^0.1.3",
+    "uuid": "^9.0.1",
     "ytdl-core": "^4.11.5"
   }
 }

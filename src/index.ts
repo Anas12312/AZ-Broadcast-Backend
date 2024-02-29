@@ -7,6 +7,7 @@ import { userHandler } from './Handlers/userHandler';
 import imageRouter from './Routers/ImageRouter';
 import cors from 'cors'
 import { Stream, pipeline } from 'stream';
+import streamRouter from './Routers/StreamRouter';
 
 const app = express();
 app.use(express.json())
@@ -14,6 +15,7 @@ app.use(cors())
 
 
 app.use(imageRouter);
+app.use(streamRouter);
 
 const server = http.createServer(app);
 
