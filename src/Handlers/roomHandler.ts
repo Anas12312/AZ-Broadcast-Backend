@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import { SocketState } from "../types/SocketState";
+import { QueueFactory } from "../Queue/QueueFactory";
 
 export const roomHandler = (io: Server, socket: Socket) => {
 
@@ -8,29 +9,14 @@ export const roomHandler = (io: Server, socket: Socket) => {
         const roomId = Math.floor(Math.random() * 1000000) + '';
         socket.join(roomId);
 
+        // Create queue for the room
+        QueueFactory.createQueue(roomId);
+
         socket.timeout(100).emit("created", {
             roomId
         }, async () => {
-            // const room = io.sockets.adapter.rooms.get(roomId);
-
-            // if (room) {
-            //     const members = Array.from(room).map(id => {
-            //         return {
-            //             username: users[id].username,
-            //             image: users[id].image
-            //         }
-            //     });
-
-            //     socket.emit("room-created", {
-            //         roomId,
-            //         members
-            //     });
-            // }
-
             const sockets = await io.in(roomId).fetchSockets();
             const socketsData = sockets.map(socket => socket.data);
-
-
 
             io.in(roomId).emit('room-created', {
                 roomId,

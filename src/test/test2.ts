@@ -30,14 +30,6 @@ import { PassThrough } from 'stream';
 
 
     app.get('/stream', (req, res) => {
-        // const headers = {
-        //     'Cache-Control': 'no-cache, no-store',
-        //     Connection: 'keep-alive',
-        //     'Content-Type': 'audio/x-wav',
-        //     Pragma: 'no-cache',
-        // };
-        // res.writeHead(200, headers);
-
         res.set({
             "Content-Type": 'audio/webm',
             "Transfer-Encoding": "chunked",
@@ -66,7 +58,7 @@ import { PassThrough } from 'stream';
         res.send();
     })
 
-    app.listen(4000, () => {
+    app.listen(3000, () => {
         console.log('Listening...');
     })
 })();
