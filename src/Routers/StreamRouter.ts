@@ -39,7 +39,7 @@ streamRouter.get('/starts/:id', (req, res) => {
 
     queue.play();
 
-    res.send(200)
+    res.sendStatus(200)
 })
 
 streamRouter.get('/pause/:id', (req, res) => {
@@ -53,7 +53,7 @@ streamRouter.get('/pause/:id', (req, res) => {
 
     queue.pause();
 
-    res.send(200)
+    res.sendStatus(200)
 })
 
 streamRouter.get('/resume/:id', (req, res) => {
@@ -67,7 +67,7 @@ streamRouter.get('/resume/:id', (req, res) => {
 
     queue.resume();
 
-    res.send(200)
+    res.sendStatus(200)
 })
 
 streamRouter.get('/add/:id', (req, res) => {
@@ -82,7 +82,7 @@ streamRouter.get('/add/:id', (req, res) => {
 
     queue.addTrack(trackUrl);
 
-    res.send(200)
+    res.sendStatus(200)
 })
 
 streamRouter.get('/skip/:id', (req, res) => {
@@ -96,7 +96,22 @@ streamRouter.get('/skip/:id', (req, res) => {
 
     queue.skip();
 
-    res.send(200)
+    res.sendStatus(200)
+})
+
+streamRouter.post('/edit/:id', (req, res) => {
+    const roomId = req.params.id;
+    const tracks: string[] = req.body.tracks;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.modifiyTracks(tracks);
+
+    res.sendStatus(200);
 })
 
 
