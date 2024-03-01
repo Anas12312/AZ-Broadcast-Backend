@@ -123,7 +123,7 @@ streamRouter.get('/queue/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    res.send({queue: queue.getTracks()});
+    res.send(queue.getTracks());
 })
 
 

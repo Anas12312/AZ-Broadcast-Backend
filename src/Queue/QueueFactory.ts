@@ -183,7 +183,10 @@ export class QueueFactory {
     }
 
     getTracks() {
-        return this.tracks;
+        return {
+            tracks: this.tracks,
+            currentTrack: this.currentTrack
+        };
     }
 
 }
