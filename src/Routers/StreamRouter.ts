@@ -99,6 +99,20 @@ streamRouter.get('/skip/:id', (req, res) => {
     res.sendStatus(200)
 })
 
+streamRouter.get('/prev/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.prev();
+
+    res.sendStatus(200)
+})
+
 streamRouter.post('/edit/:id', (req, res) => {
     const roomId = req.params.id;
     const tracks: Track[] = req.body.tracks;
