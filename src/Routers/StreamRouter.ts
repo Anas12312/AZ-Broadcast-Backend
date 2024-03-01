@@ -28,7 +28,7 @@ streamRouter.get('/stream/:id', (req, res) => {
     })
 })
 
-streamRouter.get('/start/:id', (req, res) => {
+streamRouter.get('/starts/:id', (req, res) => {
     const roomId = req.params.id;
 
     const queue = QueueFactory.getQueue(roomId);
@@ -37,9 +37,67 @@ streamRouter.get('/start/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.start();
+    queue.play();
 
     res.send(200)
 })
+
+streamRouter.get('/pause/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.pause();
+
+    res.send(200)
+})
+
+streamRouter.get('/resume/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.resume();
+
+    res.send(200)
+})
+
+streamRouter.get('/add/:id', (req, res) => {
+    const roomId = req.params.id;
+    const {trackUrl} = req.body;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.addTrack(trackUrl);
+
+    res.send(200)
+})
+
+streamRouter.get('/skip/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.skip();
+
+    res.send(200)
+})
+
 
 export default streamRouter;

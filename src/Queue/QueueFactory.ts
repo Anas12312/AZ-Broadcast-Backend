@@ -6,6 +6,11 @@ import { v4 as uuidv4 } from 'uuid'
 import ytdl from "ytdl-core";
 
 
+interface Track {
+    url: string,
+    bitrate: number
+}
+
 export class QueueFactory {
 
     private static instances: QueueFactory[] = [];
@@ -13,6 +18,8 @@ export class QueueFactory {
     private roomId: string;
     private clients: Map<string, PassThrough>;
     private tracks: string[];
+    private currentTrack: string = '';
+    private index: number = 0;
 
     private stream: PassThrough | undefined;
     private playing: boolean = false;
@@ -69,30 +76,99 @@ export class QueueFactory {
     }
 
 
-    async start() {
-        const info = await ytdl.getInfo('https://www.youtube.com/watch?v=AjMfk5IJsSw');
+    async loadCurrentTrack() {
 
+        // if(!this.currentTrack && this.tracks[0]) {
+        //     this.currentTrack = this.tracks[0];
+        // }
+
+        if(!this.currentTrack) {
+            return;
+        }
+
+        if(this.stream) {
+            this.stream.removeAllListeners()
+            this.stream.end()
+        }
+
+        console.log(this.currentTrack);
+
+        const info = await ytdl.getInfo(this.currentTrack);
+    
         const format = ytdl.chooseFormat(info.formats, {quality:'highestaudio'})
         
-        this.throttle = new Throttle({ rate: format.bitrate! / 8 });
+        this.throttle = new Throttle({ rate: (200 * 1024) / 8 });
     
-        const youtube = ytdl('https://www.youtube.com/watch?v=AjMfk5IJsSw', {quality:'highestaudio'});
+        const youtube = ytdl(this.currentTrack, {quality:'highestaudio'});
         
-        this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
-
-        this.stream.on('data', (chunk) => this.broadcast(chunk));
+        this.stream = Ffmpeg(youtube).format('mp3').audioBitrate(format.audioBitrate!).pipe(this.throttle) as PassThrough;
     }
 
-    play() {
+    nextTrack() {
+        if(!this.started() && this.tracks[0]) {
+            this.currentTrack = this.tracks[0];
+            return;
+        } 
 
+        this.index = (this.index + 1) % this.tracks.length;
+        // load to next track
+        this.currentTrack = this.tracks[this.index];
+        return;
+    }
+
+    started() {
+        return this.stream && this.throttle && this.currentTrack;
+    }
+
+    start() {
+        if(!this.stream) return;
+
+        this.playing = true;
+
+        this.stream
+            .on('data', (chunk) => this.broadcast(chunk))
+            .on('finish', () => {
+                this.play()
+            })
+            .on('error', (e) => {
+                console.log(this.roomId ,e);
+                this.play();
+            });
+    }
+
+    async play() {
+        this.nextTrack();
+        await this.loadCurrentTrack();
+        this.start();
     }
 
     pause() {
-
+        if(!this.stream) return;
+        this.stream.pause();
     }
 
     resume() {
+        if(!this.stream) return;
+        this.stream.resume();
+    }
 
+    addTrack(trackUrl: string) {
+        this.tracks.push(trackUrl);
+        if(!this.currentTrack) {
+            this.currentTrack = this.tracks[0];
+        }
+        console.log(this.tracks);
+        // this.play();
+    }
+
+    modifiyTracks(newTracks: string[]) {
+        this.tracks = newTracks;
+    }
+
+    skip() {
+        this.pause();
+        this.nextTrack();
+        this.play();
     }
 
 }
