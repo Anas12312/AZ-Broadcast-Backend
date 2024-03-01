@@ -6,10 +6,13 @@ import { v4 as uuidv4 } from 'uuid'
 import ytdl from "ytdl-core";
 
 
-interface Track {
+export interface Track {
     url: string,
-    bitrate: number
-}
+    name?: string,
+    thumbnail?: string,
+    duration?: number,
+    author?: string
+};
 
 export class QueueFactory {
 
@@ -17,7 +20,7 @@ export class QueueFactory {
 
     private roomId: string;
     private clients: Map<string, PassThrough>;
-    private tracks: string[];
+    private tracks: Track[];
     private currentTrack: string = '';
     private index: number = 0;
 
@@ -90,29 +93,23 @@ export class QueueFactory {
             this.stream.removeAllListeners()
             this.stream.end()
         }
-
-        console.log(this.currentTrack);
-
-        const info = await ytdl.getInfo(this.currentTrack);
-    
-        const format = ytdl.chooseFormat(info.formats, {quality:'highestaudio'})
         
         this.throttle = new Throttle({ rate: (200 * 1024) / 8 });
     
         const youtube = ytdl(this.currentTrack, {quality:'highestaudio', highWaterMark: 1 << 25});
         
-        this.stream = Ffmpeg(youtube).format('mp3').audioBitrate(format.audioBitrate!).pipe(this.throttle) as PassThrough;
+        this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
     }
 
     nextTrack() {
         if(!this.started() && this.tracks[0]) {
-            this.currentTrack = this.tracks[0];
+            this.currentTrack = this.tracks[0].url;
             return;
         } 
 
         this.index = (this.index + 1) % this.tracks.length;
         // load to next track
-        this.currentTrack = this.tracks[this.index];
+        this.currentTrack = this.tracks[this.index].url;
         return;
     }
 
@@ -155,16 +152,27 @@ export class QueueFactory {
         this.stream.resume();
     }
 
-    addTrack(trackUrl: string) {
-        this.tracks.push(trackUrl);
+    async addTrack(trackUrl: string) {
+
+        const info = await ytdl.getInfo(this.currentTrack);
+
+        this.tracks.push({
+            url: trackUrl,
+            author: info.videoDetails.author.name,
+            duration: +info.videoDetails.lengthSeconds,
+            name: info.videoDetails.title,
+            thumbnail: info.videoDetails.thumbnails[0].url
+        });
+
         if(!this.currentTrack) {
-            this.currentTrack = this.tracks[0];
+            this.currentTrack = this.tracks[0].url;
         }
+        
         console.log(this.tracks);
         if(!this.started()) this.play();
     }
 
-    modifiyTracks(newTracks: string[]) {
+    modifiyTracks(newTracks: Track[]) {
         this.tracks = newTracks;
     }
 

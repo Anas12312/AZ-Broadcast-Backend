@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { QueueFactory } from "../Queue/QueueFactory";
+import { QueueFactory, Track } from "../Queue/QueueFactory";
 
 const streamRouter = Router();
 
@@ -101,7 +101,7 @@ streamRouter.get('/skip/:id', (req, res) => {
 
 streamRouter.post('/edit/:id', (req, res) => {
     const roomId = req.params.id;
-    const tracks: string[] = req.body.tracks;
+    const tracks: Track[] = req.body.tracks;
 
     const queue = QueueFactory.getQueue(roomId);
 
