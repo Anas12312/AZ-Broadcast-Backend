@@ -99,7 +99,7 @@ export class QueueFactory {
         
         this.throttle = new Throttle({ rate: (200 * 1024) / 8 });
     
-        const youtube = ytdl(this.currentTrack, {quality:'highestaudio'});
+        const youtube = ytdl(this.currentTrack, {quality:'highestaudio', highWaterMark: 1 << 25});
         
         this.stream = Ffmpeg(youtube).format('mp3').audioBitrate(format.audioBitrate!).pipe(this.throttle) as PassThrough;
     }
@@ -143,11 +143,14 @@ export class QueueFactory {
     }
 
     pause() {
+        if (!this.started() || !this.playing) return;
         if(!this.stream) return;
+        this.playing = false;
         this.stream.pause();
     }
 
     resume() {
+        if (!this.started() || this.playing) return;
         if(!this.stream) return;
         this.stream.resume();
     }
@@ -158,7 +161,7 @@ export class QueueFactory {
             this.currentTrack = this.tracks[0];
         }
         console.log(this.tracks);
-        // this.play();
+        // if(!this.started()) this.play();
     }
 
     modifiyTracks(newTracks: string[]) {
@@ -167,7 +170,7 @@ export class QueueFactory {
 
     skip() {
         this.pause();
-        this.nextTrack();
+        // this.nextTrack();
         this.play();
     }
 
