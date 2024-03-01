@@ -11,7 +11,8 @@ export interface Track {
     name?: string,
     thumbnail?: string,
     duration?: number,
-    author?: string
+    author?: string,
+    bitrate?: number
 };
 
 export class QueueFactory {
@@ -94,9 +95,14 @@ export class QueueFactory {
             this.stream.end()
         }
         
-        this.throttle = new Throttle({ rate: (200 * 1024) / 8 });
+        const track = this.tracks.find(x => x.url === this.currentTrack)!;
+
+        // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
+        
+        this.throttle = new Throttle({ rate: track.bitrate! / 8 });
     
-        const youtube = ytdl(this.currentTrack, {quality:'highestaudio', highWaterMark: 1 << 25});
+    
+        const youtube = ytdl(track.url, {quality:'highestaudio', highWaterMark: 1 << 25});
         
         this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
     }
@@ -156,12 +162,15 @@ export class QueueFactory {
 
         const info = await ytdl.getInfo(trackUrl);
 
+        const format = ytdl.chooseFormat(info.formats, { quality:'highestaudio' });
+
         this.tracks.push({
             url: trackUrl,
             author: info.videoDetails.author.name,
             duration: +info.videoDetails.lengthSeconds,
             name: info.videoDetails.title,
-            thumbnail: info.videoDetails.thumbnails[0].url
+            thumbnail: info.videoDetails.thumbnails[0].url,
+            bitrate: format.bitrate
         });
 
         if(!this.currentTrack) {
@@ -178,7 +187,16 @@ export class QueueFactory {
 
     skip() {
         this.pause();
-        // this.nextTrack();
+        this.play();
+    }
+
+    prev() {
+        if(!this.started()) return;
+
+        this.index = (this.index - 2) % this.tracks.length;
+        this.currentTrack = this.tracks[this.index].url;
+
+        this.pause();
         this.play();
     }
 
