@@ -174,4 +174,8 @@ export class QueueFactory {
         this.play();
     }
 
+    getTracks() {
+        return this.tracks;
+    }
+
 }
