@@ -70,7 +70,7 @@ streamRouter.get('/resume/:id', (req, res) => {
     res.sendStatus(200)
 })
 
-streamRouter.get('/add/:id', (req, res) => {
+streamRouter.get('/add/:id', async (req, res) => {
     const roomId = req.params.id;
     const {trackUrl} = req.body;
 
@@ -80,7 +80,7 @@ streamRouter.get('/add/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.addTrack(trackUrl);
+    await queue.addTrack(trackUrl);
 
     res.sendStatus(200)
 })
