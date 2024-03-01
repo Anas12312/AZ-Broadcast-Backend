@@ -114,5 +114,17 @@ streamRouter.post('/edit/:id', (req, res) => {
     res.sendStatus(200);
 })
 
+streamRouter.get('/queue/:id', (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    res.send({queue: queue.getTracks()});
+})
+
 
 export default streamRouter;
