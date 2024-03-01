@@ -161,7 +161,7 @@ export class QueueFactory {
             this.currentTrack = this.tracks[0];
         }
         console.log(this.tracks);
-        // if(!this.started()) this.play();
+        if(!this.started()) this.play();
     }
 
     modifiyTracks(newTracks: string[]) {
