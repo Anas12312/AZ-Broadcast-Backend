@@ -154,7 +154,7 @@ export class QueueFactory {
 
     async addTrack(trackUrl: string) {
 
-        const info = await ytdl.getInfo(this.currentTrack);
+        const info = await ytdl.getInfo(trackUrl);
 
         this.tracks.push({
             url: trackUrl,
