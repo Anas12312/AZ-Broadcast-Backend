@@ -8,6 +8,7 @@ import imageRouter from './Routers/ImageRouter';
 import cors from 'cors'
 import { Stream, pipeline } from 'stream';
 import streamRouter from './Routers/StreamRouter';
+import cloudinary from 'cloudinary'
 
 const app = express();
 app.use(express.json())
