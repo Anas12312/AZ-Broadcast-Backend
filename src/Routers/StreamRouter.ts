@@ -70,7 +70,7 @@ streamRouter.get('/resume/:id', (req, res) => {
     res.sendStatus(200)
 })
 
-streamRouter.get('/add/:id', async (req, res) => {
+streamRouter.post('/add/:id', async (req, res) => {
     const roomId = req.params.id;
     const {trackUrl} = req.body;
 
