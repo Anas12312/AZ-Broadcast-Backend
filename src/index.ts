@@ -9,6 +9,7 @@ import cors from 'cors'
 import { Stream, pipeline } from 'stream';
 import streamRouter from './Routers/StreamRouter';
 import cloudinary from 'cloudinary'
+import searchRouter from './Routers/searchRouter';
 
 const app = express();
 app.use(express.json())
@@ -17,6 +18,7 @@ app.use(cors())
 
 app.use(imageRouter);
 app.use(streamRouter);
+app.use(searchRouter)
 
 const server = http.createServer(app);
 
