@@ -1,9 +1,11 @@
 import { Response } from "express";
 import Ffmpeg from "fluent-ffmpeg";
+import { Socket } from "socket.io";
 import { PassThrough } from "stream";
 import { Throttle } from "stream-throttle";
 import { v4 as uuidv4 } from 'uuid'
 import ytdl from "ytdl-core";
+import { io } from "..";
 
 
 export interface Track {
@@ -15,12 +17,17 @@ export interface Track {
     bitrate?: number
 };
 
+export interface BroadcastClient {
+    socket: any,
+    httpClient: PassThrough
+}
+
 export class QueueFactory {
 
     private static instances: QueueFactory[] = [];
 
     private roomId: string;
-    private clients: Map<string, PassThrough>;
+    private clients: Map<string, BroadcastClient>;
     private tracks: Track[];
     private currentTrack: string = '';
     private index: number = 0;
@@ -58,11 +65,26 @@ export class QueueFactory {
         return queue;
     }
 
-    addClient() {
-        const id = uuidv4();
+    static deleteQueue(roomId: string) {
+        const queue = QueueFactory.instances.filter(x => !(x.roomId === roomId) );
+
+        QueueFactory.instances = queue;
+    }
+
+    async addClient(socketId: string) {
         const client = new PassThrough();
-        this.clients.set(id, client);
-        return { id, client };
+
+        const socket = (await io.in(this.roomId).fetchSockets()).find(x => x.id === socketId);
+
+        if(!socket) return;
+
+        const broadcastClient: BroadcastClient = {
+            httpClient: client,
+            socket: socket
+        }
+
+        this.clients.set(socketId, broadcastClient);
+        return {id: socketId ,broadcastClient};
     }
 
     removeClient(id: string): Boolean {
@@ -75,7 +97,7 @@ export class QueueFactory {
 
     broadcast(chunk: any) {
         this.clients.forEach((client) => {
-            client.write(chunk);
+            client.httpClient.write(chunk);
         })
     }
 

@@ -3,8 +3,8 @@ import { QueueFactory, Track } from "../Queue/QueueFactory";
 
 const streamRouter = Router();
 
-streamRouter.get('/stream/:id', (req, res) => {
-    const roomId = req.params.id;
+streamRouter.get('/stream/:id/socket/:socketId', async (req, res) => {
+    const {id: roomId, socketId } = req.params;
     const queue = QueueFactory.getQueue(roomId);
     
     if(!queue) {
@@ -19,12 +19,16 @@ streamRouter.get('/stream/:id', (req, res) => {
     }).status(200);
     
     
-    const {id, client } = queue.addClient();
+    const result = await queue.addClient(socketId);
 
-    client.pipe(res);
+    if(!result) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    result.broadcastClient.httpClient.pipe(res);
 
     res.on('close', () => {
-        queue.removeClient(id);
+        queue.removeClient(result.id);
     })
 })
 
