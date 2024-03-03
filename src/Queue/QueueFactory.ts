@@ -86,32 +86,32 @@ export class QueueFactory {
         //     this.currentTrack = this.tracks[0];
         // }
 
-        if(!this.currentTrack) {
+        if (!this.currentTrack) {
             return;
         }
 
-        if(this.stream) {
+        if (this.stream) {
             this.stream.removeAllListeners()
             this.stream.end()
         }
-        
+
         const track = this.tracks.find(x => x.url === this.currentTrack)!;
 
         // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
-        
+
         this.throttle = new Throttle({ rate: track.bitrate! / 8 });
-    
-    
-        const youtube = ytdl(track.url, {quality:'highestaudio', highWaterMark: 1 << 25});
-        
+
+
+        const youtube = ytdl(track.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
+
         this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
     }
 
     nextTrack() {
-        if(!this.started() && this.tracks[0]) {
+        if (!this.started() && this.tracks[0]) {
             this.currentTrack = this.tracks[0].url;
             return;
-        } 
+        }
 
         this.index = (this.index + 1) % this.tracks.length;
         // load to next track
@@ -124,7 +124,7 @@ export class QueueFactory {
     }
 
     start() {
-        if(!this.stream) return;
+        if (!this.stream) return;
 
         this.playing = true;
 
@@ -134,7 +134,7 @@ export class QueueFactory {
                 this.play()
             })
             .on('error', (e) => {
-                console.log(this.roomId ,e);
+                console.log(this.roomId, e);
                 this.play();
             });
     }
@@ -147,14 +147,14 @@ export class QueueFactory {
 
     pause() {
         if (!this.started() || !this.playing) return;
-        if(!this.stream) return;
+        if (!this.stream) return;
         this.playing = false;
         this.stream.pause();
     }
 
     resume() {
         if (!this.started() || this.playing) return;
-        if(!this.stream) return;
+        if (!this.stream) return;
         this.stream.resume();
     }
 
@@ -162,7 +162,7 @@ export class QueueFactory {
 
         const info = await ytdl.getInfo(trackUrl);
 
-        const format = ytdl.chooseFormat(info.formats, { quality:'highestaudio' });
+        const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
 
         this.tracks.push({
             url: trackUrl,
@@ -173,12 +173,12 @@ export class QueueFactory {
             bitrate: format.bitrate
         });
 
-        if(!this.currentTrack) {
+        if (!this.currentTrack) {
             this.currentTrack = this.tracks[0].url;
         }
-        
+
         console.log(this.tracks);
-        if(!this.started()) this.play();
+        if (!this.started()) this.play();
     }
 
     modifiyTracks(newTracks: Track[]) {
@@ -191,9 +191,15 @@ export class QueueFactory {
     }
 
     prev() {
-        if(!this.started()) return;
+        if (!this.started()) return;
 
-        this.index = (this.index - 2) % this.tracks.length;
+        if (this.index == 0) {
+            this.index = this.tracks.length - 1
+        } else if (this.index == 1) {
+            this.index = this.tracks.length - 1
+        } else {
+            this.index -= 2;
+        }
         this.currentTrack = this.tracks[this.index].url;
 
         this.pause();
