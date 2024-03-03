@@ -137,7 +137,7 @@ streamRouter.post('/edit/:id/:socketId', (req, res) => {
     res.sendStatus(200);
 })
 
-streamRouter.get('/queue/:id', (req, res) => {
+streamRouter.get('/queue/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
 
     const queue = QueueFactory.getQueue(roomId);
