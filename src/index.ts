@@ -40,6 +40,8 @@ const onConnection = (socket: Socket) => {
         };
 
         socket.data = user;
+
+        socket.emit('init', socket.id);
     })
 
     roomHandler(io, socket);
@@ -55,3 +57,5 @@ const port = process.env.PORT || 4000;
 server.listen(port, () => {
     console.log("Server Running on port: " + port)
 })
+
+export { io };
