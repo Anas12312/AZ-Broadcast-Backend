@@ -178,7 +178,7 @@ export class QueueFactory {
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} paused the queue.`);
+        io.in(this.roomId).emit('track_paused', `${socket.socket.data.username} paused the queue.`);
     }
 
     resume(socketId: string) {
@@ -188,7 +188,7 @@ export class QueueFactory {
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} resumed the queue.`);
+        io.in(this.roomId).emit('track_resumed', `${socket.socket.data.username} resumed the queue.`);
     }
 
     async addTrack(trackUrl: string, socketId: string) {
@@ -231,7 +231,7 @@ export class QueueFactory {
        
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} skiped a track.`);
+        io.in(this.roomId).emit('track_skiped', `${socket.socket.data.username} skiped a track.`);
     }
 
     prev(socketId: string) {
@@ -251,7 +251,7 @@ export class QueueFactory {
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} preved a track.`);
+        io.in(this.roomId).emit('track_preved', `${socket.socket.data.username} preved a track.`);
     }
 
     getTracks() {
