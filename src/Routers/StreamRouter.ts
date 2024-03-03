@@ -3,7 +3,7 @@ import { QueueFactory, Track } from "../Queue/QueueFactory";
 
 const streamRouter = Router();
 
-streamRouter.get('/stream/:id/socket/:socketId', async (req, res) => {
+streamRouter.get('/stream/sockets/:id/:socketId', async (req, res) => {
     const {id: roomId, socketId } = req.params;
     const queue = QueueFactory.getQueue(roomId);
     
