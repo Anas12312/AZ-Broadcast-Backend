@@ -40,8 +40,6 @@ const onConnection = (socket: Socket) => {
         };
 
         socket.data = user;
-
-        socket.emit('init', socket.id);
     })
 
     roomHandler(io, socket);
