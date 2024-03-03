@@ -104,10 +104,6 @@ export class QueueFactory {
 
     async loadCurrentTrack() {
 
-        // if(!this.currentTrack && this.tracks[0]) {
-        //     this.currentTrack = this.tracks[0];
-        // }
-
         if (!this.currentTrack) {
             return;
         }
@@ -174,18 +170,39 @@ export class QueueFactory {
         this.stream.pause();
     }
 
-    resume() {
+    pauseAPI(socketId: string) {
+        if (!this.started() || !this.playing) return;
+        if (!this.stream) return;
+        this.playing = false;
+        this.stream.pause();
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} paused the queue.`);
+    }
+
+    resume(socketId: string) {
         if (!this.started() || this.playing) return;
         if (!this.stream) return;
         this.stream.resume();
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} resumed the queue.`);
     }
 
-    async addTrack(trackUrl: string) {
+    async addTrack(trackUrl: string, socketId: string) {
+
+        const socket = this.clients.get(socketId);
+
+        if(!socket) return;
 
         const info = await ytdl.getInfo(trackUrl);
 
+        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
+        
         const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
-
+        
         this.tracks.push({
             url: trackUrl,
             author: info.videoDetails.author.name,
@@ -199,7 +216,6 @@ export class QueueFactory {
             this.currentTrack = this.tracks[0].url;
         }
 
-        console.log(this.tracks);
         if (!this.started()) this.play();
     }
 
@@ -207,12 +223,18 @@ export class QueueFactory {
         this.tracks = newTracks;
     }
 
-    skip() {
+    skip(socketId: string) {
+        io.in(this.roomId).emit('skip');
+        
         this.pause();
         this.play();
+       
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} skiped a track.`);
     }
 
-    prev() {
+    prev(socketId: string) {
         if (!this.started()) return;
 
         if (this.index == 0) {
@@ -226,6 +248,10 @@ export class QueueFactory {
 
         this.pause();
         this.play();
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} preved a track.`);
     }
 
     getTracks() {

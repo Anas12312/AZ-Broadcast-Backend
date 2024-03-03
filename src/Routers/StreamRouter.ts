@@ -3,7 +3,7 @@ import { QueueFactory, Track } from "../Queue/QueueFactory";
 
 const streamRouter = Router();
 
-streamRouter.get('/stream/sockets/:id/:socketId', async (req, res) => {
+streamRouter.get('/stream/:id/:socketId', async (req, res) => {
     const {id: roomId, socketId } = req.params;
     const queue = QueueFactory.getQueue(roomId);
     
@@ -46,8 +46,9 @@ streamRouter.get('/starts/:id', (req, res) => {
     res.sendStatus(200)
 })
 
-streamRouter.get('/pause/:id', (req, res) => {
+streamRouter.get('/pause/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId;
 
     const queue = QueueFactory.getQueue(roomId);
 
@@ -55,13 +56,14 @@ streamRouter.get('/pause/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.pause();
+    queue.pauseAPI(socketId);
 
     res.sendStatus(200)
 })
 
-streamRouter.get('/resume/:id', (req, res) => {
+streamRouter.get('/resume/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId;
 
     const queue = QueueFactory.getQueue(roomId);
 
@@ -69,13 +71,14 @@ streamRouter.get('/resume/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.resume();
+    queue.resume(socketId);
 
     res.sendStatus(200)
 })
 
-streamRouter.post('/add/:id', async (req, res) => {
+streamRouter.post('/add/:id/:socketId', async (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId;
     const {trackUrl} = req.body;
 
     const queue = QueueFactory.getQueue(roomId);
@@ -84,13 +87,14 @@ streamRouter.post('/add/:id', async (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    await queue.addTrack(trackUrl);
+    await queue.addTrack(trackUrl, socketId);
 
     res.sendStatus(200)
 })
 
-streamRouter.get('/skip/:id', (req, res) => {
+streamRouter.get('/skip/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId;
 
     const queue = QueueFactory.getQueue(roomId);
 
@@ -98,13 +102,14 @@ streamRouter.get('/skip/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.skip();
+    queue.skip(socketId);
 
     res.sendStatus(200)
 })
 
-streamRouter.get('/prev/:id', (req, res) => {
+streamRouter.get('/prev/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId;
 
     const queue = QueueFactory.getQueue(roomId);
 
@@ -112,12 +117,12 @@ streamRouter.get('/prev/:id', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.prev();
+    queue.prev(socketId);
 
     res.sendStatus(200)
 })
 
-streamRouter.post('/edit/:id', (req, res) => {
+streamRouter.post('/edit/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
     const tracks: Track[] = req.body.tracks;
 
