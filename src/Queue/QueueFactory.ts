@@ -30,7 +30,7 @@ export class QueueFactory {
     private roomId: string;
     private clients: Map<string, BroadcastClient>;
     private tracks: Track[];
-    private trackIndex: number = 0;
+    private currentIndex: number = 0;
     private currentTrackId: string = '';
     private currentTrack: Track | undefined;
 
@@ -130,7 +130,7 @@ export class QueueFactory {
     private nextTrack() {
         if (!this.started() && this.tracks[0]) {
             this.currentTrackId = this.tracks[0].id;
-            this.trackIndex = 0;
+            this.currentIndex = 0;
             return;
         }
     
@@ -140,9 +140,9 @@ export class QueueFactory {
 
         const { currentTrack:track, index } = currentTrack;
 
-        this.trackIndex = (index + 1) % this.tracks.length;
+        this.currentIndex = (index + 1) % this.tracks.length;
         // load to next track
-        this.currentTrackId = this.tracks[this.trackIndex].id;
+        this.currentTrackId = this.tracks[this.currentIndex].id;
 
         return;
     }
@@ -209,7 +209,7 @@ export class QueueFactory {
         this.throttle = undefined;
         this.stream = undefined;
 
-        this.trackIndex = 0;
+        this.currentIndex = 0;
         this.currentTrackId = '';
 
         const socket = this.clients.get(socketId);
@@ -292,12 +292,12 @@ export class QueueFactory {
     prev(socketId: string) {
         if (!this.started()) return;
 
-        if (this.trackIndex == 0) {
-            this.trackIndex = this.tracks.length - 1
-        } else if (this.trackIndex == 1) {
-            this.trackIndex = this.tracks.length - 1
+        if (this.currentIndex == 0) {
+            this.currentIndex = this.tracks.length - 1
+        } else if (this.currentIndex == 1) {
+            this.currentIndex = this.tracks.length - 1
         } else {
-            this.trackIndex -= 2;
+            this.currentIndex -= 2;
         }
 
         const currentTrack = this.getCurrentTrack();
@@ -333,11 +333,11 @@ export class QueueFactory {
         if(track.id === id) {
             
             if(index === this.tracks.length-1) {
-                this.trackIndex = this.tracks.length-2;
-                this.currentTrackId = this.tracks[this.trackIndex].id;
+                this.currentIndex = this.tracks.length-2;
+                this.currentTrackId = this.tracks[this.currentIndex].id;
             }else {
-                this.trackIndex = this.trackIndex-1;
-                this.currentTrackId = this.tracks[this.trackIndex].id;
+                this.currentIndex = this.currentIndex-1;
+                this.currentTrackId = this.tracks[this.currentIndex].id;
             }
         }
 

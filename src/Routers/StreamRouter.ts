@@ -150,7 +150,7 @@ streamRouter.get('/queue/:id/:socketId', (req, res) => {
     res.send(queue.getTracks());
 })
 
-streamRouter.get('/queue/:id/:socketId/:trackId', (req, res) => {
+streamRouter.get('/remove/:id/:socketId/:trackId', (req, res) => {
     const roomId = req.params.id;
     const socketId = req.params.socketId;
     const trackId = req.params.trackId;
