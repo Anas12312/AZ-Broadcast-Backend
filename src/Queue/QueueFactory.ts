@@ -14,7 +14,8 @@ export interface Track {
     thumbnail?: string,
     duration?: number,
     author?: string,
-    bitrate?: number
+    bitrate?: number,
+    id: string
 };
 
 export interface BroadcastClient {
@@ -29,8 +30,9 @@ export class QueueFactory {
     private roomId: string;
     private clients: Map<string, BroadcastClient>;
     private tracks: Track[];
-    private currentTrack: string = '';
-    private index: number = 0;
+    private trackIndex: number = 0;
+    private currentTrackId: string = '';
+    private currentTrack: Track | undefined;
 
     private stream: PassThrough | undefined;
     private playing: boolean = false;
@@ -95,53 +97,82 @@ export class QueueFactory {
         return false;
     }
 
-    broadcast(chunk: any) {
+    private broadcast(chunk: any) {
         this.clients.forEach((client) => {
             client.httpClient.write(chunk);
         })
     }
 
 
-    async loadCurrentTrack() {
+    private async loadCurrentTrack() {
 
-        if (!this.currentTrack) {
-            return;
-        }
+        const currentTrack = this.getCurrentTrack();
+
+        if(!currentTrack) return;
+
+        console.log('loaded');
 
         if (this.stream) {
             this.stream.removeAllListeners()
             this.stream.end()
         }
 
-        const track = this.tracks.find(x => x.url === this.currentTrack)!;
-
         // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
 
-        this.throttle = new Throttle({ rate: track.bitrate! / 8 });
+        this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
 
 
-        const youtube = ytdl(track.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
+        const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
 
         this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
     }
 
-    nextTrack() {
+    private nextTrack() {
         if (!this.started() && this.tracks[0]) {
-            this.currentTrack = this.tracks[0].url;
+            this.currentTrackId = this.tracks[0].id;
+            this.trackIndex = 0;
             return;
         }
-        
-        this.index = (this.index + 1) % this.tracks.length;
+    
+        const currentTrack = this.getCurrentTrack();
+
+        if(!currentTrack) return;
+
+        const { currentTrack:track, index } = currentTrack;
+
+        this.trackIndex = (index + 1) % this.tracks.length;
+      
         // load to next track
-        this.currentTrack = this.tracks[this.index].url;
+        this.currentTrackId = this.tracks[this.trackIndex].id;
+
         return;
     }
 
-    started() {
-        return this.stream && this.throttle && this.currentTrack;
+    private getCurrentTrack() {
+        let currentTrack: Track | undefined;
+        let index: number = NaN;
+
+        if(!this.currentTrackId) return undefined;
+
+        this.tracks.forEach((track, i) => {
+            if(track.id === this.currentTrackId) {
+                currentTrack = track;
+                index = i;
+            }
+        })
+
+        if(!currentTrack) {
+            return undefined
+        }
+
+        return { currentTrack, index };
     }
 
-    start() {
+    private started() {
+        return this.stream && this.throttle && this.getCurrentTrack();
+    }
+
+    private start() {
         if (!this.stream) return;
 
         this.playing = true;
@@ -163,11 +194,27 @@ export class QueueFactory {
         this.start();
     }
 
-    pause() {
+    private pause() {
         if (!this.started() || !this.playing) return;
         if (!this.stream) return;
         this.playing = false;
         this.stream.pause();
+    }
+
+    terminate(socketId: string) {
+        this.pause();
+
+        this.playing = false;
+
+        this.throttle = undefined;
+        this.stream = undefined;
+
+        this.trackIndex = 0;
+        this.currentTrackId = '';
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('tracks_terminated', `${socket.socket.data.username} terminated the queue.`);
     }
 
     pauseAPI(socketId: string) {
@@ -216,21 +263,29 @@ export class QueueFactory {
             duration: +info.videoDetails.lengthSeconds,
             name: info.videoDetails.title,
             thumbnail: info.videoDetails.thumbnails[0].url,
-            bitrate: format.bitrate
+            bitrate: format.bitrate,
+            id: uuidv4()
         });
 
-        if (!this.currentTrack) {
-            this.currentTrack = this.tracks[0].url;
+        if (!this.getCurrentTrack()) {
+            this.currentTrackId = this.tracks[0].id;
         }
 
         if (!this.started()) this.play();
     }
 
-    modifiyTracks(newTracks: Track[]) {
+    modifiyTracks(newTracks: Track[], socketId: string) {
+        if(!newTracks.length) {
+            this.terminate(socketId);
+            return;
+        }
+
         this.tracks = newTracks;
     }
 
     skip(socketId: string) {
+        if(!this.started()) return;
+
         io.in(this.roomId).emit('skip');
         
         this.pause();
@@ -244,14 +299,18 @@ export class QueueFactory {
     prev(socketId: string) {
         if (!this.started()) return;
 
-        if (this.index == 0) {
-            this.index = this.tracks.length - 1
-        } else if (this.index == 1) {
-            this.index = this.tracks.length - 1
+        if (this.trackIndex == 0) {
+            this.trackIndex = this.tracks.length - 1
+        } else if (this.trackIndex == 1) {
+            this.trackIndex = this.tracks.length - 1
         } else {
-            this.index -= 2;
+            this.trackIndex -= 2;
         }
-        this.currentTrack = this.tracks[this.index].url;
+
+        const currentTrack = this.getCurrentTrack();
+        if(!currentTrack) return;
+
+        this.currentTrackId = currentTrack.currentTrack.id;
 
         this.pause();
         this.play();
@@ -264,7 +323,7 @@ export class QueueFactory {
     getTracks() {
         return {
             tracks: this.tracks,
-            currentTrack: this.currentTrack
+            currentTrack: this.getCurrentTrack()?.index
         };
     }
 
