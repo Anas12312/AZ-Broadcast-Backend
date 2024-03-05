@@ -188,6 +188,7 @@ export class QueueFactory {
     }
 
     async play() {
+        io.in(this.roomId).emit('played');
         this.nextTrack();
         await this.loadCurrentTrack();
         this.start();
@@ -317,6 +318,36 @@ export class QueueFactory {
             tracks: this.tracks,
             currentTrack: this.getCurrentTrack()?.index
         };
+    }
+
+    removeTrack(id: string, socketId: string) {
+
+        this.pause();
+
+        const currentTrack = this.getCurrentTrack();
+
+        if(!currentTrack) return;
+
+        const {currentTrack:track, index} = currentTrack;
+
+        if(track.id === id) {
+            
+            if(index === this.tracks.length-1) {
+                this.trackIndex = this.tracks.length-2;
+                this.currentTrackId = this.tracks[this.trackIndex].id;
+            }else {
+                this.trackIndex = this.trackIndex-1;
+                this.currentTrackId = this.tracks[this.trackIndex].id;
+            }
+        }
+
+        this.tracks = this.tracks.filter((x) => x.id !== id);
+
+        this.play();
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_removed', `${socket.socket.data.username} removed a track.`);
     }
 
 }

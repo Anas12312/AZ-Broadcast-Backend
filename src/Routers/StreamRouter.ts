@@ -32,19 +32,19 @@ streamRouter.get('/stream/:id/:socketId', async (req, res) => {
     })
 })
 
-streamRouter.get('/starts/:id', (req, res) => {
-    const roomId = req.params.id;
+// streamRouter.get('/starts/:id', (req, res) => {
+//     const roomId = req.params.id;
 
-    const queue = QueueFactory.getQueue(roomId);
+//     const queue = QueueFactory.getQueue(roomId);
 
-    if(!queue) {
-        return res.status(400).send({error: 'Invalid room Id'});
-    }
+//     if(!queue) {
+//         return res.status(400).send({error: 'Invalid room Id'});
+//     }
 
-    queue.play();
+//     queue.play();
 
-    res.sendStatus(200)
-})
+//     res.sendStatus(200)
+// })
 
 streamRouter.get('/pause/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
@@ -148,6 +148,22 @@ streamRouter.get('/queue/:id/:socketId', (req, res) => {
     }
 
     res.send(queue.getTracks());
+})
+
+streamRouter.get('/queue/:id/:socketId/:trackId', (req, res) => {
+    const roomId = req.params.id;
+    const socketId = req.params.socketId;
+    const trackId = req.params.trackId;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.removeTrack(trackId, socketId);
+
+    res.sendStatus(200);
 })
 
 
