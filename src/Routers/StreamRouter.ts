@@ -124,6 +124,7 @@ streamRouter.get('/prev/:id/:socketId', (req, res) => {
 
 streamRouter.post('/edit/:id/:socketId', (req, res) => {
     const roomId = req.params.id;
+    const socketId = req.params.socketId
     const tracks: Track[] = req.body.tracks;
 
     const queue = QueueFactory.getQueue(roomId);
@@ -132,7 +133,7 @@ streamRouter.post('/edit/:id/:socketId', (req, res) => {
         return res.status(400).send({error: 'Invalid room Id'});
     }
 
-    queue.modifiyTracks(tracks);
+    queue.modifiyTracks(tracks, socketId);
 
     res.sendStatus(200);
 })
