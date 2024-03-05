@@ -110,7 +110,6 @@ export class QueueFactory {
 
         if(!currentTrack) return;
 
-        console.log('loaded');
 
         if (this.stream) {
             this.stream.removeAllListeners()
@@ -183,7 +182,6 @@ export class QueueFactory {
                 this.play()
             })
             .on('error', (e) => {
-                console.log(this.roomId, e);
                 this.play();
             });
     }
