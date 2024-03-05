@@ -143,10 +143,6 @@ export class QueueFactory {
         this.trackIndex = (index + 1) % this.tracks.length;
         // load to next track
         this.currentTrackId = this.tracks[this.trackIndex].id;
-        
-        console.log(this.currentTrackId);
-        console.log(this.trackIndex);
-        console.log('A7a',this.getCurrentTrack());
 
         return;
     }
