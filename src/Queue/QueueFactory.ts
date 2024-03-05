@@ -130,7 +130,7 @@ export class QueueFactory {
             this.currentTrack = this.tracks[0].url;
             return;
         }
-
+        
         this.index = (this.index + 1) % this.tracks.length;
         // load to next track
         this.currentTrack = this.tracks[this.index].url;
@@ -197,8 +197,15 @@ export class QueueFactory {
 
         if(!socket) return;
 
+        // prevent same track addition
+        if(this.tracks.filter((t) => {
+            return t.url === trackUrl
+        }).length) {
+            return;
+        }
+        
         const info = await ytdl.getInfo(trackUrl);
-
+        
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
         
         const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
@@ -231,7 +238,7 @@ export class QueueFactory {
        
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('track_skiped', `${socket.socket.data.username} skiped a track.`);
+        io.in(this.roomId).emit('track_skiped', `${socket.socket.data.username} skipped a track.`);
     }
 
     prev(socketId: string) {
