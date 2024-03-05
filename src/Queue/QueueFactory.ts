@@ -330,15 +330,15 @@ export class QueueFactory {
 
     removeTrack(id: string, socketId: string) {
 
-        this.pause();
-
+        
         const currentTrack = this.getCurrentTrack();
-
+        
         if(!currentTrack) return;
-
+        
         const {currentTrack:track, index} = currentTrack;
-
+        
         if(track.id === id) {
+            this.pause();
             
             if(index === this.tracks.length-1) {
                 this.currentIndex = this.tracks.length-2;
@@ -347,11 +347,12 @@ export class QueueFactory {
                 this.currentIndex = this.currentIndex-1;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
             }
+
+            this.play();
         }
 
         this.tracks = this.tracks.filter((x) => x.id !== id);
 
-        this.play();
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
