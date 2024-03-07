@@ -134,7 +134,11 @@ export class QueueFactory {
             this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
 
 
-            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
+            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
+                .on('error', (e: Error) => {
+                    console.log(e);
+                    console.log('a7a');
+                });
     
             this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
         } catch(e) {
@@ -390,7 +394,6 @@ export class QueueFactory {
 
     removeTrack(id: string, socketId: string) {
 
-        
         const currentTrack = this.getCurrentTrack();
         
         if(!currentTrack) return;
