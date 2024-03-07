@@ -166,5 +166,20 @@ streamRouter.get('/remove/:id/:socketId/:trackId', (req, res) => {
     res.sendStatus(200);
 })
 
+streamRouter.get('/play/:id/:socketId/:trackId', async (req, res) => {
+    const roomId = req.params.id;
+    const socketId = req.params.socketId;
+    const trackId = req.params.trackId;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    await queue.playAPI(socketId, trackId);
+
+    res.sendStatus(200);
+})
 
 export default streamRouter;
