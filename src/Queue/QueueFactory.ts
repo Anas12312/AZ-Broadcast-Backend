@@ -71,6 +71,8 @@ export class QueueFactory {
         const queue = QueueFactory.instances.filter(x => !(x.roomId === roomId) );
 
         QueueFactory.instances = queue;
+
+        console.log(roomId, 'deleted');
     }
 
     async addClient(socketId: string) {
@@ -97,6 +99,12 @@ export class QueueFactory {
     removeClient(socketId: string): Boolean {
         if (this.clients.has(socketId)) {
             this.clients.delete(socketId);
+
+            if(!this.clients.size) {
+                this.terminate();
+                QueueFactory.deleteQueue(this.roomId);
+            }
+
             return true;
         }
         return false;
@@ -191,6 +199,12 @@ export class QueueFactory {
     }
 
     async play() {
+        if(this.clients.size === 0) {
+            this.terminate();
+            QueueFactory.deleteQueue(this.roomId);
+            return
+        }
+
         io.in(this.roomId).emit('played');
         this.nextTrack();
         await this.loadCurrentTrack();
@@ -204,7 +218,19 @@ export class QueueFactory {
         this.stream.pause();
     }
 
-    terminate(socketId: string) {
+    terminate() {
+        this.pause();
+
+        this.playing = false;
+
+        this.throttle = undefined;
+        this.stream = undefined;
+
+        this.currentIndex = 0;
+        this.currentTrackId = '';
+    }
+
+    terminateAPI(socketId: string) {
         this.pause();
 
         this.playing = false;
@@ -272,7 +298,7 @@ export class QueueFactory {
 
     modifiyTracks(newTracks: Track[], socketId: string) {
         if(!newTracks.length) {
-            this.terminate(socketId);
+            this.terminateAPI(socketId);
             return;
         }
 
