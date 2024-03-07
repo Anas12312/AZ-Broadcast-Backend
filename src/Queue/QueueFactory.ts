@@ -94,9 +94,9 @@ export class QueueFactory {
         return {id: socketId ,broadcastClient};
     }
 
-    removeClient(id: string): Boolean {
-        if (this.clients.has(id)) {
-            this.clients.delete(id);
+    removeClient(socketId: string): Boolean {
+        if (this.clients.has(socketId)) {
+            this.clients.delete(socketId);
             return true;
         }
         return false;
@@ -277,13 +277,23 @@ export class QueueFactory {
         }
 
         this.tracks = newTracks;
+
+        const current = this.getCurrentTrack();
+
+        if(!current) return;
+
+        const {index} = current;
+
+        this.currentIndex = index;
+
+        io.in(this.roomId).emit('modified');
+
+        return;
     }
 
     skip(socketId: string) {
         if(!this.started()) return;
 
-        io.in(this.roomId).emit('skip');
-        
         this.pause();
         this.play();
        
@@ -349,6 +359,7 @@ export class QueueFactory {
             this.tracks = this.tracks.filter((x) => x.id !== id);
             this.play();
         }else {
+            io.in(this.roomId).emit('removed');
             this.tracks = this.tracks.filter((x) => x.id !== id);
         }
 
