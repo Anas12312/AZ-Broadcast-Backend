@@ -74,6 +74,11 @@ export class QueueFactory {
     }
 
     async addClient(socketId: string) {
+
+        if(this.clients.has(socketId)) {
+            return { id: socketId , broadcastClient: this.clients.get(socketId)!};
+        }
+
         const client = new PassThrough();
 
         const socket = (await io.in(this.roomId).fetchSockets()).find(x => x.id === socketId);
@@ -109,8 +114,6 @@ export class QueueFactory {
         const currentTrack = this.getCurrentTrack();
 
         if(!currentTrack) return;
-
-        console.log('loaded');
 
         if (this.stream) {
             this.stream.removeAllListeners()
@@ -330,20 +333,24 @@ export class QueueFactory {
         const {currentTrack:track, index} = currentTrack;
         
         if(track.id === id) {
+            io.in(this.roomId).emit('removed');
             this.pause();
             
-            if(index === this.tracks.length-1) {
+            if(index === 0) {
+                this.currentIndex = 0;
+                this.currentTrackId = this.tracks[this.currentIndex].id;
+            }else if(index === this.tracks.length-1) {
                 this.currentIndex = this.tracks.length-2;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
             }else {
                 this.currentIndex = this.currentIndex-1;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
             }
-
+            this.tracks = this.tracks.filter((x) => x.id !== id);
             this.play();
+        }else {
+            this.tracks = this.tracks.filter((x) => x.id !== id);
         }
-
-        this.tracks = this.tracks.filter((x) => x.id !== id);
 
 
         const socket = this.clients.get(socketId);
