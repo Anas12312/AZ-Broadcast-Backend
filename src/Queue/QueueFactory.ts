@@ -130,13 +130,21 @@ export class QueueFactory {
 
         // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
 
-        this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
+        try {
+            this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
 
 
-        const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
-
-        this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
+            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 });
+    
+            this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
+        } catch(e) {
+            console.log(e);
+            this.loadCurrentTrack();
+            this.start();
+        }
     }
+
+
 
     private nextTrack() {
         if (!this.started() && this.tracks[0]) {
