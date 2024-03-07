@@ -102,6 +102,9 @@ export const roomHandler = (io: Server, socket: Socket) => {
         }
 
         socket.leave(data.roomId);
+        const queue = QueueFactory.getQueue(data.roomId);
+        queue?.removeClient(socket.id);
+
 
         io.to(data.roomId).emit('member-left', {
             member: socket.id,

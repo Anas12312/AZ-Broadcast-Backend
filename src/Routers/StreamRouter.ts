@@ -27,9 +27,9 @@ streamRouter.get('/stream/:id/:socketId', async (req, res) => {
 
     result.broadcastClient.httpClient.pipe(res);
 
-    res.on('close', () => {
-        queue.removeClient(result.id);
-    })
+    // res.on('close', () => {
+    //     queue.removeClient(result.id);
+    // })
 })
 
 // streamRouter.get('/starts/:id', (req, res) => {
