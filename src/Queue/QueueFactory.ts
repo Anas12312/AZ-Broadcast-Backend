@@ -211,6 +211,25 @@ export class QueueFactory {
         this.start();
     }
 
+    async playAPI(socketId: string, trackId: string) {
+        
+        const track = this.tracks.find(x => x.id === trackId);
+        if(!track) return;
+        const index = this.tracks.findIndex(x => x.id === trackId);
+
+        this.pause();
+
+        this.currentTrackId = track.id;
+        this.currentIndex = index;
+
+        await this.loadCurrentTrack();
+        this.start();
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_palyed', `${socket.socket.data.username} played ${track.name}.`);
+    }
+
     private pause() {
         if (!this.started() || !this.playing) return;
         if (!this.stream) return;
