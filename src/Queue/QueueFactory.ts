@@ -222,6 +222,8 @@ export class QueueFactory {
         this.currentTrackId = track.id;
         this.currentIndex = index;
 
+        io.in(this.roomId).emit('played');
+
         await this.loadCurrentTrack();
         this.start();
 
