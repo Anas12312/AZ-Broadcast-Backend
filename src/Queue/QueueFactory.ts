@@ -34,6 +34,10 @@ export class QueueFactory {
     private currentTrackId: string = '';
     private currentTrack: Track | undefined;
 
+    private loop: boolean = false;
+    private loop1: boolean = false;
+    private loopTrackId: string = ''; 
+
     private stream: PassThrough | undefined;
     private playing: boolean = false;
     private throttle: Throttle | undefined;
@@ -156,17 +160,21 @@ export class QueueFactory {
             this.currentIndex = 0;
             return;
         }
-    
+
         const currentTrack = this.getCurrentTrack();
-
+        
         if(!currentTrack) return;
-
+        
         const { currentTrack:track, index } = currentTrack;
+        
+        if(this.loop1 && this.loopTrackId) {
+            this.currentIndex = index;
+            this.currentTrackId = this.tracks[this.currentIndex].id;            
+            return;
+        }        
 
         this.currentIndex = (index + 1) % this.tracks.length;
-        // load to next track
         this.currentTrackId = this.tracks[this.currentIndex].id;
-
         return;
     }
 
@@ -216,6 +224,8 @@ export class QueueFactory {
             QueueFactory.deleteQueue(this.roomId);
             return
         }
+
+        if(!this.loop && this.currentIndex === this.tracks.length -1) return;
 
         io.in(this.roomId).emit('played');
         this.nextTrack();
@@ -427,4 +437,35 @@ export class QueueFactory {
         io.in(this.roomId).emit('track_removed', `${socket.socket.data.username} removed a track.`);
     }
 
+    loopAPI(socketId: string, loop:boolean) {
+        this.loop = loop;
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit(loop ? 'tracks_looped' : 'tracks_unlooped', `${socket.socket.data.username} ${loop ? 'looped' : 'unlooped'} the playlist.`);
+ 
+    }
+
+    loopOneAPI(socketId: string, trackId: string) {
+        const track = this.tracks.find(x => x.id === trackId);
+
+        if(!track) return;
+
+        this.loop1 = true;
+
+        this.loopTrackId = track.id;
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('tracks_looped', `${socket.socket.data.username} the playlist.`);        
+    }
+
+    unLoopOneAPI(socketId: string) {
+        this.loop1 = false;
+        this.loopTrackId = '';
+
+        const socket = this.clients.get(socketId);
+        if(!socket) return;
+        io.in(this.roomId).emit('track_looped', `${socket.socket.data.username} continued the playlist.`);
+    }
 }
