@@ -446,8 +446,8 @@ export class QueueFactory {
  
     }
 
-    loopOneAPI(socketId: string, trackId: string) {
-        const track = this.tracks.find(x => x.id === trackId);
+    loopOneAPI(socketId: string) {
+        const track = this.tracks.find(x => x.id === this.currentTrackId);
 
         if(!track) return;
 
