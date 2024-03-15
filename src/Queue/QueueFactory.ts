@@ -121,7 +121,6 @@ export class QueueFactory {
         })
     }
 
-
     private async loadCurrentTrack() {
 
         const currentTrack = this.getCurrentTrack();
@@ -138,7 +137,6 @@ export class QueueFactory {
         try {
             this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
 
-
             const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
                 .on('error', (e: Error) => {
                     console.log(e);
@@ -152,8 +150,6 @@ export class QueueFactory {
             this.start();
         }
     }
-
-
 
     private nextTrack() {
         if (!this.started() && this.tracks[0]) {
@@ -211,7 +207,10 @@ export class QueueFactory {
         this.stream
             .on('data', (chunk) => this.broadcast(chunk))
             .on('finish', () => {
-                this.play()
+                setTimeout(() => {
+                    io.in(this.roomId).emit('track-ended');
+                    this.play()
+                }, 50_000)
             })
             .on('error', (e) => {
                 console.log(this.roomId, e);
@@ -235,11 +234,9 @@ export class QueueFactory {
     }
 
     async playAPI(socketId: string, trackId: string) {
-
         if(this.commadBusy) return;
-
         this.commadBusy = true;
-        
+
         const track = this.tracks.find(x => x.id === trackId);
         if(!track) return;
         const index = this.tracks.findIndex(x => x.id === trackId);
@@ -296,13 +293,10 @@ export class QueueFactory {
         io.in(this.roomId).emit('tracks_terminated', `${socket.socket.data.username} terminated the queue.`);
     }
 
-    pauseAPI(socketId: string) {
+    pauseAPI(socketId: string) { 
         if(this.commadBusy) return;
         this.commadBusy = true;
-        
-        if(this.commadBusy) return;
-        this.commadBusy = true;
-        
+
         if (!this.started() || !this.playing) return;
         if (!this.stream) return;
         this.playing = false;
@@ -381,7 +375,6 @@ export class QueueFactory {
     skip(socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
- 
 
         if(!this.started()) return;
 
@@ -398,7 +391,7 @@ export class QueueFactory {
     prev(socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
- 
+
         if (!this.started()) return;
 
         if (this.currentIndex == 0) {
@@ -434,6 +427,7 @@ export class QueueFactory {
     removeTrack(id: string, socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
+
  
         const currentTrack = this.getCurrentTrack();
         
@@ -473,9 +467,13 @@ export class QueueFactory {
     loopAPI(socketId: string, loop:boolean) {
         if(this.commadBusy) return;
         this.commadBusy = true;
-        
 
         this.loop = loop;
+
+        if(!loop && this.loop1) {
+            this.loop1 = false;
+            this.loopTrackId = '';
+        }
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
@@ -487,7 +485,7 @@ export class QueueFactory {
     loopOneAPI(socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
- 
+
         const track = this.tracks.find(x => x.id === this.currentTrackId);
 
         if(!track) return;
@@ -498,22 +496,8 @@ export class QueueFactory {
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
-        io.in(this.roomId).emit('tracks_looped', `${socket.socket.data.username} the playlist.`);        
-
-        this.commadBusy = false;
-    }
-
-    unLoopOneAPI(socketId: string) {
-        if(this.commadBusy) return;
-        this.commadBusy = true;
- 
-        this.loop1 = false;
-        this.loopTrackId = '';
-
-        const socket = this.clients.get(socketId);
-        if(!socket) return;
-        io.in(this.roomId).emit('track_looped', `${socket.socket.data.username} continued the playlist.`);
-
+        io.in(this.roomId).emit('tracks_looped', `${socket.socket.data.username} the playlist.`);  
+        
         this.commadBusy = false;
     }
 
@@ -521,7 +505,7 @@ export class QueueFactory {
         return {
             loop: this.loop,
             loop1: this.loop1,
-            loopTrackId: this.loopTrackId
+            loopTrackId:this.loopTrackId
         }
     }
 }
