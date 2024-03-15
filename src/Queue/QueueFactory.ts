@@ -175,6 +175,7 @@ export class QueueFactory {
         }        
 
         this.currentIndex = (index + 1) % this.tracks.length;
+
         this.currentTrackId = this.tracks[this.currentIndex].id;
         return;
     }
@@ -214,7 +215,6 @@ export class QueueFactory {
                 this.play()
             })
             .on('error', (e) => {
-                console.log(this.roomId, e);
                 this.play();
             });
     }
@@ -331,8 +331,15 @@ export class QueueFactory {
 
         if(!socket) return;
 
+        // prevent same track addition
+        if(this.tracks.filter((t) => {
+            return t.url === trackUrl
+        }).length) {
+            return;
+        }
+        
         const info = await ytdl.getInfo(trackUrl);
-
+        
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
         
         const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
@@ -390,9 +397,11 @@ export class QueueFactory {
        
         const socket = this.clients.get(socketId);
         if(!socket) return;
+
         io.in(this.roomId).emit('track_skiped', `${socket.socket.data.username} skiped a track.`);
 
         this.commadBusy = false;
+
     }
 
     prev(socketId: string) {
