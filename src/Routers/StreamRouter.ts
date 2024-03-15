@@ -182,4 +182,63 @@ streamRouter.get('/play/:id/:socketId/:trackId', async (req, res) => {
     res.sendStatus(200);
 })
 
+streamRouter.get('/loop-one/:id/:socketId', async (req, res) => {
+    const roomId = req.params.id;
+    const socketId = req.params.socketId;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.loopOneAPI(socketId);
+
+    res.sendStatus(200);
+})
+
+streamRouter.get('/un-loop-one/:id/:socketId', async (req, res) => {
+    const roomId = req.params.id;
+    const socketId = req.params.socketId;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.unLoopOneAPI(socketId);
+
+    res.sendStatus(200);
+})
+
+streamRouter.get('/loop/:id/:socketId/:loop', async (req, res) => {
+    const roomId = req.params.id;
+    const socketId = req.params.socketId;
+    const loop = !!req.params.loop;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    queue.loopAPI(socketId, loop);
+
+    res.sendStatus(200);
+})
+
+streamRouter.get('/status/:id', async (req, res) => {
+    const roomId = req.params.id;
+
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    res.send(queue.getStatusAPI());
+})
+
+
 export default streamRouter;
