@@ -228,7 +228,17 @@ streamRouter.get('/loop/:id/:socketId/:loop', async (req, res) => {
     res.sendStatus(200);
 })
 
+streamRouter.get('/status/:id', async (req, res) => {
+    const roomId = req.params.id;
 
+    const queue = QueueFactory.getQueue(roomId);
+
+    if(!queue) {
+        return res.status(400).send({error: 'Invalid room Id'});
+    }
+
+    res.send(queue.getStatusAPI());
+})
 
 
 export default streamRouter;
