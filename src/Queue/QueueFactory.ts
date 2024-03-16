@@ -213,7 +213,7 @@ export class QueueFactory {
                 setTimeout(() => {
                     io.in(this.roomId).emit('track-ended');
                     this.play()
-                }, delayTime*0.2)
+                }, delayTime*0.23)
             })
             .on('error', (e) => {
                 console.log(this.roomId, e);
