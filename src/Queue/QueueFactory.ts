@@ -144,6 +144,7 @@ export class QueueFactory {
                 });
     
             this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
+            return currentTrack.currentTrack.duration;
         } catch(e) {
             console.log(e);
             this.loadCurrentTrack();
@@ -199,7 +200,7 @@ export class QueueFactory {
         return this.stream && this.throttle && this.getCurrentTrack();
     }
 
-    private start() {
+    private start(delayTime: number = 0) {
         if (!this.stream) return;
 
         this.playing = true;
@@ -210,7 +211,7 @@ export class QueueFactory {
                 setTimeout(() => {
                     io.in(this.roomId).emit('track-ended');
                     this.play()
-                }, 50_000)
+                }, delayTime*0.2)
             })
             .on('error', (e) => {
                 console.log(this.roomId, e);
@@ -229,8 +230,8 @@ export class QueueFactory {
 
         io.in(this.roomId).emit('played');
         this.nextTrack();
-        await this.loadCurrentTrack();
-        this.start();
+        const delayTime = await this.loadCurrentTrack();
+        this.start(delayTime);
     }
 
     async playAPI(socketId: string, trackId: string) {
