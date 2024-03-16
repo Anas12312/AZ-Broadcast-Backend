@@ -10,6 +10,7 @@ import { Stream, pipeline } from 'stream';
 import streamRouter from './Routers/StreamRouter';
 import cloudinary from 'cloudinary'
 import searchRouter from './Routers/searchRouter';
+import { QueueFactory } from './Queue/QueueFactory';
 
 const app = express();
 app.use(express.json())
@@ -23,7 +24,7 @@ app.use(searchRouter)
 const server = http.createServer(app);
 
 const io = new socket.Server(server, {
-    cors:{
+    cors: {
         origin: '*',
         methods: ['GET', 'POST']
     }
@@ -33,7 +34,7 @@ const io = new socket.Server(server, {
 const onConnection = (socket: Socket) => {
 
     socket.on('init', (data) => {
-        
+
         let user: User = {
             username: data.username,
             image: data.image
@@ -44,6 +45,22 @@ const onConnection = (socket: Socket) => {
 
     roomHandler(io, socket);
     userHandler(io, socket);
+
+    socket.on('disconnecting', () => {
+        socket.rooms.forEach(async roomId => {
+
+            socket.leave(roomId);
+            const queue = QueueFactory.getQueue(roomId);
+            queue?.removeClient(socket.id);
+
+            io.to(roomId).emit('member-left', {
+                member: socket.id,
+                memberUsername: socket.data.username,
+                members: (await io.in(roomId).fetchSockets()).map(socket => socket.data)
+            })
+
+        })
+    })
 }
 
 (async () => {
