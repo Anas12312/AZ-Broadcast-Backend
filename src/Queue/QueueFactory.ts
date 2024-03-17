@@ -135,7 +135,10 @@ export class QueueFactory {
         // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
 
         try {
-            this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
+            this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 })
+            .on('error', (e:Error) => {
+                console.log('Throttle: ',e);
+            });
 
             const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
                 .on('error', (e: Error) => {
@@ -408,10 +411,13 @@ export class QueueFactory {
 
         if (this.currentIndex == 0) {
             this.currentIndex = this.tracks.length - 1
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         } else if (this.currentIndex == 1) {
             this.currentIndex = this.tracks.length - 1
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         } else {
             this.currentIndex -= 2;
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         }
 
         const currentTrack = this.getCurrentTrack();
