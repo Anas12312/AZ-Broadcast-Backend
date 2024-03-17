@@ -135,7 +135,10 @@ export class QueueFactory {
         // this.throttle = new Throttle({ rate: (145 * 1024) / 8 });
 
         try {
-            this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 });
+            this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 })
+            .on('error', (e:Error) => {
+                console.log('Throttle: ',e);
+            });
 
             const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
                 .on('error', (e: Error) => {
@@ -409,7 +412,7 @@ export class QueueFactory {
 
     }
 
-    prev(socketId: string) {
+    async prev(socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
 
@@ -417,10 +420,13 @@ export class QueueFactory {
 
         if (this.currentIndex == 0) {
             this.currentIndex = this.tracks.length - 1
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         } else if (this.currentIndex == 1) {
             this.currentIndex = this.tracks.length - 1
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         } else {
             this.currentIndex -= 2;
+            this.currentTrackId = this.tracks[this.currentIndex].id;
         }
 
         const currentTrack = this.getCurrentTrack();
@@ -429,7 +435,17 @@ export class QueueFactory {
         this.currentTrackId = currentTrack.currentTrack.id;
 
         this.pause();
-        this.play();
+        if(this.clients.size === 0) {
+            this.terminate();
+            QueueFactory.deleteQueue(this.roomId);
+            return
+        }
+
+        // if(!this.loop && this.currentIndex === this.tracks.length -1) return;
+
+        io.in(this.roomId).emit('played');
+        const delayTime = await this.loadCurrentTrack();
+        this.start(delayTime);
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
