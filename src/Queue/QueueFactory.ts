@@ -403,7 +403,7 @@ export class QueueFactory {
         this.commadBusy = false;
     }
 
-    prev(socketId: string) {
+    async prev(socketId: string) {
         if(this.commadBusy) return;
         this.commadBusy = true;
 
@@ -426,7 +426,17 @@ export class QueueFactory {
         this.currentTrackId = currentTrack.currentTrack.id;
 
         this.pause();
-        this.play();
+        if(this.clients.size === 0) {
+            this.terminate();
+            QueueFactory.deleteQueue(this.roomId);
+            return
+        }
+
+        // if(!this.loop && this.currentIndex === this.tracks.length -1) return;
+
+        io.in(this.roomId).emit('played');
+        const delayTime = await this.loadCurrentTrack();
+        this.start(delayTime);
 
         const socket = this.clients.get(socketId);
         if(!socket) return;
