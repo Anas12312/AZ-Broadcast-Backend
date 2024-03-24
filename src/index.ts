@@ -11,14 +11,35 @@ import streamRouter from './Routers/StreamRouter';
 import cloudinary from 'cloudinary'
 import searchRouter from './Routers/searchRouter';
 import { QueueFactory } from './Queue/QueueFactory';
+import { UserCounter } from './types/UserCounter';
+import { RoomCounter } from './types/RoomCounter';
 
-export let USER_COUNT = 0;
-let ROOM_COUNT = 0;
-export const add_ROOM_COUNT = () => {
-    ROOM_COUNT++;
+let USER_COUNT: UserCounter = {
+    users: [],
+    _count: 0
+};
+export const add_USER_COUNT = (username: string) => {
+    USER_COUNT.users.push(username);
+    ROOM_COUNT._count++;
 }
-export const minus_ROOM_COUNT = () => {
-    ROOM_COUNT--;
+export const minus_USER_COUNT = (username: string) => {
+    USER_COUNT.users.filter((x) => x !== username );
+    ROOM_COUNT._count--;
+}
+
+let ROOM_COUNT: RoomCounter = {
+    rooms: [],
+    _count: 0
+};
+export const add_ROOM_COUNT = (roomId: string) => {
+    ROOM_COUNT.rooms.push({
+        roomId
+    })
+    ROOM_COUNT._count++;
+}
+export const minus_ROOM_COUNT = (roomId: string) => {
+    ROOM_COUNT.rooms.filter((x) => x !== roomId );
+    ROOM_COUNT._count--;
 }
 
 const app = express();
@@ -42,7 +63,7 @@ const io = new socket.Server(server, {
 // On Connection
 const onConnection = (socket: Socket) => {
 
-    USER_COUNT++;
+    
 
     socket.on('init', (data) => {
 
@@ -52,13 +73,14 @@ const onConnection = (socket: Socket) => {
         };
 
         socket.data = user;
+        add_USER_COUNT(user.username);
     })
 
     roomHandler(io, socket);
     userHandler(io, socket);
 
     socket.on('disconnecting', () => {
-        USER_COUNT--;
+        minus_USER_COUNT(socket.data.username);
     
         socket.rooms.forEach(async roomId => {
 
@@ -88,6 +110,7 @@ app.get("/counr", (req:Request, res:Response) => {
         rooms: ROOM_COUNT
     })
 })
+
 
 server.listen(port, () => {
     console.log("Server Running on port: " + port)
