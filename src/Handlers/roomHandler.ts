@@ -1,10 +1,13 @@
 import { Server, Socket } from "socket.io";
 import { SocketState } from "../types/SocketState";
 import { QueueFactory } from "../Queue/QueueFactory";
+import { add_ROOM_COUNT } from "..";
 
 export const roomHandler = (io: Server, socket: Socket) => {
 
     socket.on("create", () => {
+
+        add_ROOM_COUNT();
 
         const roomId = Math.floor(Math.random() * 1000000) + '';
         socket.join(roomId);

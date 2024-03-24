@@ -5,7 +5,7 @@ import { PassThrough } from "stream";
 import { Throttle } from "stream-throttle";
 import { v4 as uuidv4 } from 'uuid'
 import ytdl from "ytdl-core";
-import { io } from "..";
+import { io, minus_ROOM_COUNT } from "..";
 
 
 export interface Track {
@@ -78,6 +78,7 @@ export class QueueFactory {
         QueueFactory.instances = queue;
 
         console.log(roomId, 'deleted');
+        minus_ROOM_COUNT();
     }
 
     async addClient(socketId: string) {
