@@ -78,7 +78,7 @@ export class QueueFactory {
         QueueFactory.instances = queue;
 
         console.log(roomId, 'deleted');
-        minus_ROOM_COUNT();
+        minus_ROOM_COUNT(roomId);
     }
 
     async addClient(socketId: string) {

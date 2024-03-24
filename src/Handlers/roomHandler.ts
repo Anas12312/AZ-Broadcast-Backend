@@ -7,10 +7,10 @@ export const roomHandler = (io: Server, socket: Socket) => {
 
     socket.on("create", () => {
 
-        add_ROOM_COUNT();
-
+        
         const roomId = Math.floor(Math.random() * 1000000) + '';
         socket.join(roomId);
+        add_ROOM_COUNT(roomId);
 
         // Create queue for the room
         QueueFactory.createQueue(roomId);
