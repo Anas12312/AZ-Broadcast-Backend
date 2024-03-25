@@ -19,11 +19,9 @@ let USER_COUNT: UserCounter = {
     _count: 0
 };
 export const add_USER_COUNT = (username: string) => {
-    USER_COUNT.users.push(username);
     ROOM_COUNT._count++;
 }
 export const minus_USER_COUNT = (username: string) => {
-    USER_COUNT.users.filter((x) => x !== username );
     ROOM_COUNT._count--;
 }
 
@@ -104,9 +102,12 @@ const onConnection = (socket: Socket) => {
 
 const port = process.env.PORT || 4000;
 
-app.get("/counr", (req:Request, res:Response) => {
+app.get("/counr", async (req:Request, res:Response) => {
     res.send({
-        users: USER_COUNT,
+        users: {
+            _count: USER_COUNT._count,
+            users: (await io.sockets.fetchSockets()).map(x => x.data.username)
+        },
         rooms: ROOM_COUNT
     })
 })
