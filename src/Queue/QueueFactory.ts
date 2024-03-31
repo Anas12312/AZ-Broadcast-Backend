@@ -4,7 +4,7 @@ import { Socket } from "socket.io";
 import { PassThrough } from "stream";
 import { Throttle } from "stream-throttle";
 import { v4 as uuidv4 } from 'uuid'
-import ytdl from "ytdl-core";
+import ytdl from "@distube/ytdl-core";
 import { io, minus_ROOM_COUNT } from "..";
 
 
