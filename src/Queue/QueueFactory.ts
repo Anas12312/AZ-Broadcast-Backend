@@ -11,7 +11,7 @@ import fs from 'fs'
 import path from 'path'
 Ffmpeg.setFfmpegPath(FfmpegPath.path)
 
-const AGENT = ytdl.createAgent(JSON.parse(fs.readFileSync(path.join(__dirname, 'cockies.json'), 'utf-8')))
+const AGENT = ytdl.createAgent(JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.json'), 'utf-8')))
 
 console.log('Agent:', AGENT);
 
