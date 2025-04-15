@@ -15,12 +15,19 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 Ffmpeg.setFfmpegPath(FfmpegPath.path)
 
 // Set proxy agent
-const proxy = 'http://brd-customer-hl_4e80773d-zone-datacenter_proxy1:ffhxed0lbnx6@brd.superproxy.io:33335'
+// const proxy = 'http://brd-customer-hl_4e80773d-zone-datacenter_proxy1:ffhxed0lbnx6@brd.superproxy.io:33335'
+// const newProxy = 'http://brd-customer-hl_4e80773d-zone-web_unlocker1:ucr25g0v8osh@brd.superproxy.io:33335'
+// const username = 'testytdl_UxbVX'
+// const password = '86wd_W2J=TCcPgN'
+// const oxyLabProxy = `https://${username}:${password}@unblock.oxylabs.io:60000`
+// const staticProxy = 'http://177.234.241.25:999'
 const cookies = JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.json'), 'utf-8'))
 
-const agent = ytdl.createProxyAgent({
-    uri: proxy
-}, cookies)
+// const agent = ytdl.createProxyAgent({
+//     uri: staticProxy
+// }, cookies)
+
+const cookieAgent = ytdl.createAgent(cookies)
 
 export interface Track {
     url: string,
@@ -159,7 +166,7 @@ export class QueueFactory {
                 {
                     quality: 'highestaudio',
                     highWaterMark: 1 << 25,
-                    agent
+                    agent: cookieAgent
                 },
             )
                 .on('error', (e: Error) => {
@@ -371,7 +378,7 @@ export class QueueFactory {
         }
 
         const info = await ytdl.getInfo(trackUrl, {
-            agent
+            agent: cookieAgent
         });
 
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
