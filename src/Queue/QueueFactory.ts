@@ -9,11 +9,17 @@ import { io, minus_ROOM_COUNT } from "..";
 import FfmpegPath from '@ffmpeg-installer/ffmpeg'
 import fs from 'fs'
 import path from 'path'
+import { HttpsProxyAgent } from 'https-proxy-agent';
+
+// Set ffmpeg path
 Ffmpeg.setFfmpegPath(FfmpegPath.path)
 
-const AGENT = ytdl.createAgent(JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.json'), 'utf-8')))
+// Set proxy agent
+const proxy = 'http://brd-customer-hl_4e80773d-zone-datacenter_proxy1:ffhxed0lbnx6@brd.superproxy.io:33335'
+const cookies = JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.json'), 'utf-8'))
 
-console.log('Agent:', AGENT);
+const agent = new HttpsProxyAgent(proxy)
+
 
 export interface Track {
     url: string,
@@ -148,7 +154,18 @@ export class QueueFactory {
                     console.log('Throttle: ', e);
                 });
 
-            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25, agent: AGENT })
+            const youtube = ytdl(currentTrack.currentTrack.url,
+                {
+                    quality: 'highestaudio',
+                    highWaterMark: 1 << 25,
+                    requestOptions: {
+                        ...agent,
+                        headers: {
+                            ...cookies.map((c: any) => `${c.name}=${c.value}`).join('; ')
+                        }
+                    }
+                },
+            )
                 .on('error', (e: Error) => {
                     console.log(e);
                     console.log('a7a');
@@ -357,7 +374,14 @@ export class QueueFactory {
             return;
         }
 
-        const info = await ytdl.getInfo(trackUrl, { agent: AGENT });
+        const info = await ytdl.getInfo(trackUrl, {
+            requestOptions: {
+                ...agent,
+                headers: {
+                    ...cookies.map((c: any) => `${c.name}=${c.value}`).join('; ')
+                }
+            }
+        });
 
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
 
