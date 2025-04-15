@@ -6,7 +6,9 @@ import { Throttle } from "stream-throttle";
 import { v4 as uuidv4 } from 'uuid'
 import ytdl from "@distube/ytdl-core";
 import { io, minus_ROOM_COUNT } from "..";
+import FfmpegPath from '@ffmpeg-installer/ffmpeg'
 
+Ffmpeg.setFfmpegPath(FfmpegPath.path)
 
 export interface Track {
     url: string,
@@ -36,7 +38,7 @@ export class QueueFactory {
 
     private loop: boolean = false;
     private loop1: boolean = false;
-    private loopTrackId: string = ''; 
+    private loopTrackId: string = '';
 
     private stream: PassThrough | undefined;
     private playing: boolean = false;
@@ -73,7 +75,7 @@ export class QueueFactory {
     }
 
     static deleteQueue(roomId: string) {
-        const queue = QueueFactory.instances.filter(x => !(x.roomId === roomId) );
+        const queue = QueueFactory.instances.filter(x => !(x.roomId === roomId));
 
         QueueFactory.instances = queue;
 
@@ -83,15 +85,15 @@ export class QueueFactory {
 
     async addClient(socketId: string) {
 
-        if(this.clients.has(socketId)) {
-            return { id: socketId , broadcastClient: this.clients.get(socketId)!};
+        if (this.clients.has(socketId)) {
+            return { id: socketId, broadcastClient: this.clients.get(socketId)! };
         }
 
         const client = new PassThrough();
 
         const socket = (await io.in(this.roomId).fetchSockets()).find(x => x.id === socketId);
 
-        if(!socket) return;
+        if (!socket) return;
 
         const broadcastClient: BroadcastClient = {
             httpClient: client,
@@ -99,14 +101,14 @@ export class QueueFactory {
         }
 
         this.clients.set(socketId, broadcastClient);
-        return {id: socketId ,broadcastClient};
+        return { id: socketId, broadcastClient };
     }
 
     removeClient(socketId: string): Boolean {
         if (this.clients.has(socketId)) {
             this.clients.delete(socketId);
 
-            if(!this.clients.size) {
+            if (!this.clients.size) {
                 this.terminate();
                 QueueFactory.deleteQueue(this.roomId);
             }
@@ -126,7 +128,7 @@ export class QueueFactory {
 
         const currentTrack = this.getCurrentTrack();
 
-        if(!currentTrack) return;
+        if (!currentTrack) return;
 
         if (this.stream) {
             this.stream.removeAllListeners()
@@ -137,19 +139,21 @@ export class QueueFactory {
 
         try {
             this.throttle = new Throttle({ rate: currentTrack.currentTrack.bitrate! / 8 })
-            .on('error', (e:Error) => {
-                console.log('Throttle: ',e);
-            });
+                .on('error', (e: Error) => {
+                    console.log('Throttle: ', e);
+                });
 
             const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
                 .on('error', (e: Error) => {
                     console.log(e);
                     console.log('a7a');
                 });
-    
-            this.stream = Ffmpeg(youtube).format('mp3').pipe(this.throttle) as PassThrough;
+
+            this.stream = Ffmpeg(youtube, {
+                // ffmpegPath: FfmpegPath.path
+            }).format('mp3').pipe(this.throttle) as PassThrough;
             return currentTrack.currentTrack.duration;
-        } catch(e) {
+        } catch (e) {
             console.log(e);
             this.loadCurrentTrack();
             this.start();
@@ -164,11 +168,11 @@ export class QueueFactory {
         }
 
         const currentTrack = this.getCurrentTrack();
-        
-        if(!currentTrack) return;
-        
-        const { currentTrack:track, index } = currentTrack;
-        
+
+        if (!currentTrack) return;
+
+        const { currentTrack: track, index } = currentTrack;
+
         // if(this.loop1 && this.loopTrackId) {
         //     this.currentIndex = index;
         //     this.currentTrackId = this.tracks[this.currentIndex].id;            
@@ -185,16 +189,16 @@ export class QueueFactory {
         let currentTrack: Track | undefined;
         let index: number = NaN;
 
-        if(!this.currentTrackId) return undefined;
+        if (!this.currentTrackId) return undefined;
 
         this.tracks.forEach((track, i) => {
-            if(track.id === this.currentTrackId) {
+            if (track.id === this.currentTrackId) {
                 currentTrack = track;
                 index = i;
             }
         })
 
-        if(!currentTrack) {
+        if (!currentTrack) {
             return undefined
         }
 
@@ -218,7 +222,7 @@ export class QueueFactory {
                 setTimeout(() => {
                     io.in(this.roomId).emit('track-ended');
                     this.play()
-                }, delayTime*1000*0.2)
+                }, delayTime * 1000 * 0.2)
             })
             .on('error', (e) => {
                 this.play();
@@ -226,7 +230,7 @@ export class QueueFactory {
     }
 
     async play() {
-        if(this.clients.size === 0) {
+        if (this.clients.size === 0) {
             this.terminate();
             QueueFactory.deleteQueue(this.roomId);
             return
@@ -241,7 +245,7 @@ export class QueueFactory {
     }
 
     async playAPI(socketId: string, trackId: string) {
-        if(this.commadBusy) return;
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
         // if(this.loop1) {
@@ -250,7 +254,7 @@ export class QueueFactory {
         // }
 
         const track = this.tracks.find(x => x.id === trackId);
-        if(!track) return;
+        if (!track) return;
         const index = this.tracks.findIndex(x => x.id === trackId);
 
         this.pause();
@@ -262,11 +266,11 @@ export class QueueFactory {
 
         await this.loadCurrentTrack();
         this.start();
-        
+
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('track_palyed', `${socket.socket.data.username} played ${track.name}.`);
-        
+
         this.commadBusy = false;
     }
 
@@ -305,12 +309,12 @@ export class QueueFactory {
         this.currentTrackId = '';
 
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('tracks_terminated', `${socket.socket.data.username} terminated the queue.`);
     }
 
-    pauseAPI(socketId: string) { 
-        if(this.commadBusy) return;
+    pauseAPI(socketId: string) {
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
         if (!this.started() || !this.playing) return;
@@ -319,7 +323,7 @@ export class QueueFactory {
         this.stream.pause();
 
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('track_paused', `${socket.socket.data.username} paused the queue.`);
 
         this.commadBusy = false;
@@ -331,7 +335,7 @@ export class QueueFactory {
         this.stream.resume();
 
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('track_resumed', `${socket.socket.data.username} resumed the queue.`);
     }
 
@@ -339,21 +343,21 @@ export class QueueFactory {
 
         const socket = this.clients.get(socketId);
 
-        if(!socket) return;
+        if (!socket) return;
 
         // prevent same track addition
-        if(this.tracks.filter((t) => {
+        if (this.tracks.filter((t) => {
             return t.url === trackUrl
         }).length) {
             return;
         }
-        
+
         const info = await ytdl.getInfo(trackUrl);
-        
+
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
-        
+
         const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
-        
+
         this.tracks.push({
             url: trackUrl,
             author: info.videoDetails.author.name,
@@ -372,10 +376,10 @@ export class QueueFactory {
     }
 
     modifiyTracks(newTracks: Track[], socketId: string) {
-        if(this.commadBusy) return;
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
-        if(!newTracks.length) {
+        if (!newTracks.length) {
             this.terminateAPI(socketId);
             return;
         }
@@ -384,9 +388,9 @@ export class QueueFactory {
 
         const current = this.getCurrentTrack();
 
-        if(!current) return;
+        if (!current) return;
 
-        const {index} = current;
+        const { index } = current;
 
         this.currentIndex = index;
 
@@ -396,16 +400,16 @@ export class QueueFactory {
     }
 
     skip(socketId: string) {
-        if(this.commadBusy) return;
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
-        if(!this.started()) return;
+        if (!this.started()) return;
 
         this.pause();
         this.play();
-       
+
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
 
         io.in(this.roomId).emit('track_skiped', `${socket.socket.data.username} skiped a track.`);
 
@@ -414,7 +418,7 @@ export class QueueFactory {
     }
 
     async prev(socketId: string) {
-        if(this.commadBusy) return;
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
         if (!this.started()) return;
@@ -431,12 +435,12 @@ export class QueueFactory {
         }
 
         const currentTrack = this.getCurrentTrack();
-        if(!currentTrack) return;
+        if (!currentTrack) return;
 
         this.currentTrackId = currentTrack.currentTrack.id;
 
         this.pause();
-        if(this.clients.size === 0) {
+        if (this.clients.size === 0) {
             this.terminate();
             QueueFactory.deleteQueue(this.roomId);
             return
@@ -449,7 +453,7 @@ export class QueueFactory {
         this.start(delayTime);
 
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('track_preved', `${socket.socket.data.username} preved a track.`);
 
         this.commadBusy = false;
@@ -463,46 +467,46 @@ export class QueueFactory {
     }
 
     removeTrack(id: string, socketId: string) {
-        if(this.commadBusy) return;
+        if (this.commadBusy) return;
         this.commadBusy = true;
 
- 
+
         const currentTrack = this.getCurrentTrack();
-        
-        if(!currentTrack) return;
-        
-        const {currentTrack:track, index} = currentTrack;
-        
-        if(track.id === id) {
+
+        if (!currentTrack) return;
+
+        const { currentTrack: track, index } = currentTrack;
+
+        if (track.id === id) {
             io.in(this.roomId).emit('removed');
             this.pause();
-            
-            if(index === 0) {
+
+            if (index === 0) {
                 this.currentIndex = 0;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
-            }else if(index === this.tracks.length-1) {
-                this.currentIndex = this.tracks.length-2;
+            } else if (index === this.tracks.length - 1) {
+                this.currentIndex = this.tracks.length - 2;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
-            }else {
-                this.currentIndex = this.currentIndex-1;
+            } else {
+                this.currentIndex = this.currentIndex - 1;
                 this.currentTrackId = this.tracks[this.currentIndex].id;
             }
             this.tracks = this.tracks.filter((x) => x.id !== id);
             this.play();
-        }else {
+        } else {
             io.in(this.roomId).emit('removed');
             this.tracks = this.tracks.filter((x) => x.id !== id);
         }
 
 
         const socket = this.clients.get(socketId);
-        if(!socket) return;
+        if (!socket) return;
         io.in(this.roomId).emit('track_removed', `${socket.socket.data.username} removed a track.`);
 
         this.commadBusy = false;
     }
 
-    loopAPI(socketId: string, loop:boolean) {
+    loopAPI(socketId: string, loop: boolean) {
         // if(this.commadBusy) return;
         // this.commadBusy = true;
 
@@ -535,7 +539,7 @@ export class QueueFactory {
         // const socket = this.clients.get(socketId);
         // if(!socket) return;
         // io.in(this.roomId).emit('tracks_looped', `${socket.socket.data.username} the playlist.`);  
-        
+
         // this.commadBusy = false;
     }
 
