@@ -18,8 +18,9 @@ Ffmpeg.setFfmpegPath(FfmpegPath.path)
 const proxy = 'http://brd-customer-hl_4e80773d-zone-datacenter_proxy1:ffhxed0lbnx6@brd.superproxy.io:33335'
 const cookies = JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.json'), 'utf-8'))
 
-const agent = new HttpsProxyAgent(proxy)
-
+const agent = ytdl.createProxyAgent({
+    uri: proxy
+}, cookies)
 
 export interface Track {
     url: string,
@@ -158,12 +159,7 @@ export class QueueFactory {
                 {
                     quality: 'highestaudio',
                     highWaterMark: 1 << 25,
-                    requestOptions: {
-                        ...agent,
-                        headers: {
-                            ...cookies.map((c: any) => `${c.name}=${c.value}`).join('; ')
-                        }
-                    }
+                    agent
                 },
             )
                 .on('error', (e: Error) => {
@@ -375,12 +371,7 @@ export class QueueFactory {
         }
 
         const info = await ytdl.getInfo(trackUrl, {
-            requestOptions: {
-                ...agent,
-                headers: {
-                    ...cookies.map((c: any) => `${c.name}=${c.value}`).join('; ')
-                }
-            }
+            agent
         });
 
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
