@@ -7,8 +7,13 @@ import { v4 as uuidv4 } from 'uuid'
 import ytdl from "@distube/ytdl-core";
 import { io, minus_ROOM_COUNT } from "..";
 import FfmpegPath from '@ffmpeg-installer/ffmpeg'
-
+import fs from 'fs'
+import path from 'path'
 Ffmpeg.setFfmpegPath(FfmpegPath.path)
+
+const AGENT = ytdl.createAgent(JSON.parse(fs.readFileSync(path.join(__dirname, 'cockies.json'), 'utf-8')))
+
+console.log('Agent:', AGENT);
 
 export interface Track {
     url: string,
@@ -143,7 +148,7 @@ export class QueueFactory {
                     console.log('Throttle: ', e);
                 });
 
-            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25 })
+            const youtube = ytdl(currentTrack.currentTrack.url, { quality: 'highestaudio', highWaterMark: 1 << 25, agent: AGENT })
                 .on('error', (e: Error) => {
                     console.log(e);
                     console.log('a7a');
@@ -352,7 +357,7 @@ export class QueueFactory {
             return;
         }
 
-        const info = await ytdl.getInfo(trackUrl);
+        const info = await ytdl.getInfo(trackUrl, { agent: AGENT });
 
         io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
 
