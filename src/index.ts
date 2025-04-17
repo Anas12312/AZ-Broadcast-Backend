@@ -13,6 +13,7 @@ import searchRouter from './Routers/searchRouter';
 import { QueueFactory } from './Queue/QueueFactory';
 import { UserCounter } from './types/UserCounter';
 import { RoomCounter } from './types/RoomCounter';
+import ytdl from '@distube/ytdl-core';
 
 let USER_COUNT: UserCounter = {
     users: [],
@@ -36,7 +37,7 @@ export const add_ROOM_COUNT = (roomId: string) => {
     ROOM_COUNT._count++;
 }
 export const minus_ROOM_COUNT = (roomId: string) => {
-    ROOM_COUNT.rooms.filter((x) => x !== roomId );
+    ROOM_COUNT.rooms.filter((x) => x !== roomId);
     ROOM_COUNT._count--;
 }
 
@@ -47,7 +48,17 @@ app.use(cors())
 
 app.use(imageRouter);
 app.use(streamRouter);
-app.use(searchRouter)
+app.use(searchRouter);
+
+const proxyAgent = ytdl.createProxyAgent({
+    uri: 'http://HcNQTDgZdNpUBj0:RWCXCouksIAC20L@176.103.229.25:43901'
+})
+
+ytdl.getInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
+    agent: proxyAgent
+}).then((value) => {
+    console.log("YTDL: ", value);
+}).catch(console.log)
 
 const server = http.createServer(app);
 
@@ -61,7 +72,7 @@ const io = new socket.Server(server, {
 // On Connection
 const onConnection = (socket: Socket) => {
 
-    
+
 
     socket.on('init', (data) => {
 
@@ -79,7 +90,7 @@ const onConnection = (socket: Socket) => {
 
     socket.on('disconnecting', () => {
         minus_USER_COUNT(socket.data.username);
-    
+
         socket.rooms.forEach(async roomId => {
 
             socket.leave(roomId);
@@ -102,7 +113,7 @@ const onConnection = (socket: Socket) => {
 
 const port = process.env.PORT || 4000;
 
-app.get("/counr", async (req:Request, res:Response) => {
+app.get("/counr", async (req: Request, res: Response) => {
     res.send({
         users: {
             _count: USER_COUNT._count,
