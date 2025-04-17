@@ -1,3 +1,5 @@
+import dotenv from 'dotenv'
+dotenv.config()
 import express, { Request, Response } from 'express'
 import socket, { Socket } from 'socket.io'
 import http from 'http'
@@ -14,6 +16,89 @@ import { QueueFactory } from './Queue/QueueFactory';
 import { UserCounter } from './types/UserCounter';
 import { RoomCounter } from './types/RoomCounter';
 import ytdl from '@distube/ytdl-core';
+import fs from 'fs';
+import ffmpeg from 'fluent-ffmpeg';
+
+const proxyAgent = ytdl.createProxyAgent({
+    uri: 'http://HcNQTDgZdNpUBj0:RWCXCouksIAC20L@176.103.229.25:43901'
+})
+
+async function downloadVideoAsMP3(videoUrl: string, outputPath: string) {
+    try {
+        console.log('Getting video info...');
+        
+        // Try to get info without proxy first
+        let info;
+        try {
+            info = await ytdl.getBasicInfo(videoUrl);
+            console.log('Video info retrieved without proxy');
+        } catch (infoError) {
+            console.log('Failed to get info without proxy, trying with proxy...');
+            info = await ytdl.getBasicInfo(videoUrl, { agent: proxyAgent });
+            console.log('Video info retrieved with proxy');
+        }
+        
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, '');
+        console.log('Video title:', title);
+        
+        // Create output directory if it doesn't exist
+        if (!fs.existsSync(outputPath)) {
+            fs.mkdirSync(outputPath, { recursive: true });
+        }
+
+        const outputFilePath = `${outputPath}/${title}.mp3`;
+        console.log('Output path:', outputFilePath);
+
+        console.log('Starting audio stream download...');
+        // Try without proxy first
+        let audioStream;
+        try {
+            audioStream = ytdl(videoUrl, {
+                quality: 'highestaudio',
+                filter: 'audioonly'
+            });
+            console.log('Using stream without proxy');
+        } catch (streamError) {
+            console.log('Failed to create stream without proxy, trying with proxy...');
+            audioStream = ytdl(videoUrl, {
+                quality: 'highestaudio',
+                filter: 'audioonly',
+                agent: proxyAgent
+            });
+            console.log('Using stream with proxy');
+        }
+
+        audioStream.on('error', (err) => {
+            console.error('Audio stream error:', err);
+        });
+
+        return new Promise((resolve, reject) => {
+            ffmpeg(audioStream)
+                .audioBitrate(128)
+                .on('end', () => {
+                    console.log('Download and conversion completed successfully');
+                    resolve(outputFilePath);
+                })
+                .on('error', (err) => {
+                    console.error('FFmpeg error:', err);
+                    reject(err);
+                })
+                .save(outputFilePath);
+        });
+    } catch (error) {
+        console.error('Error in downloadVideoAsMP3:', error);
+        throw error;
+    }
+}
+
+// Try with a different video URL
+// downloadVideoAsMP3('https://www.youtube.com/watch?v=JGwWNGJdvx8', './downloads')
+//     .then(filePath => {
+//         console.log('File saved successfully at:', filePath);
+//     })
+//     .catch(error => {
+//         console.error('Failed to download video:', error);
+//     });
 
 let USER_COUNT: UserCounter = {
     users: [],
@@ -49,16 +134,6 @@ app.use(cors())
 app.use(imageRouter);
 app.use(streamRouter);
 app.use(searchRouter);
-
-const proxyAgent = ytdl.createProxyAgent({
-    uri: 'http://HcNQTDgZdNpUBj0:RWCXCouksIAC20L@176.103.229.25:43901'
-})
-
-ytdl.getInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
-    agent: proxyAgent
-}).then((value) => {
-    console.log("YTDL: ", value);
-}).catch(console.log)
 
 const server = http.createServer(app);
 
