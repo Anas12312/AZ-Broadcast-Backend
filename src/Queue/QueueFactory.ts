@@ -29,6 +29,10 @@ const cookies = JSON.parse(fs.readFileSync(path.join(__dirname, '../../cockies.j
 
 const cookieAgent = ytdl.createAgent(cookies)
 
+const proxyAgent = ytdl.createProxyAgent({
+    uri: 'http://HcNQTDgZdNpUBj0:RWCXCouksIAC20L@176.103.229.25:43901'
+})
+
 export interface Track {
     url: string,
     name?: string,
@@ -162,24 +166,54 @@ export class QueueFactory {
                     console.log('Throttle: ', e);
                 });
 
-            const youtube = ytdl(currentTrack.currentTrack.url,
-                {
+            // Try without proxy first
+            let youtube;
+            try {
+                console.log('Trying to stream without proxy...');
+                youtube = ytdl(currentTrack.currentTrack.url, {
+                    quality: 'highestaudio',
+                    highWaterMark: 1 << 25
+                });
+                console.log('Successfully created stream without proxy');
+            } catch (streamError) {
+                console.log('Failed to stream without proxy, trying with proxy...', streamError);
+                youtube = ytdl(currentTrack.currentTrack.url, {
                     quality: 'highestaudio',
                     highWaterMark: 1 << 25,
-                    agent: cookieAgent
-                },
-            )
-                .on('error', (e: Error) => {
-                    console.log(e);
-                    console.log('a7a');
+                    agent: proxyAgent
                 });
+                console.log('Successfully created stream with proxy');
+            }
+
+            youtube.on('error', (e: Error) => {
+                console.log('YouTube stream error:', e);
+                if (e.message.includes('Status code: 400')) {
+                    console.log('This might be due to region restrictions or the video being unavailable');
+                    this.nextTrack();
+                    this.play();
+                }
+            });
+
+            youtube.on('progress', (chunkLength: number, downloaded: number, total: number) => {
+                const percent = downloaded / total;
+                console.log(`Stream progress for ${currentTrack.currentTrack.name}: ${(percent * 100).toFixed(2)}%`);
+            });
 
             this.stream = Ffmpeg(youtube, {
                 // ffmpegPath: FfmpegPath.path
-            }).format('mp3').pipe(this.throttle) as PassThrough;
+            })
+                .format('mp3')
+                .on('error', (err: Error) => {
+                    console.log('FFmpeg error:', err);
+                    this.nextTrack();
+                    this.play();
+                })
+                .pipe(this.throttle) as PassThrough;
+
             return currentTrack.currentTrack.duration;
         } catch (e) {
-            console.log(e);
+            console.log('Error in loadCurrentTrack:', e);
+            this.nextTrack();
             this.loadCurrentTrack();
             this.start();
         }
@@ -377,29 +411,44 @@ export class QueueFactory {
             return;
         }
 
-        const info = await ytdl.getInfo(trackUrl, {
-            agent: cookieAgent
-        });
+        try {
+            // Try without proxy first
+            let info;
+            try {
+                console.log('Getting track info without proxy...');
+                info = await ytdl.getInfo(trackUrl);
+                console.log('Successfully retrieved info without proxy');
+            } catch (infoError) {
+                console.log('Failed to get info without proxy, trying with proxy...', infoError);
+                info = await ytdl.getInfo(trackUrl, {
+                    agent: proxyAgent
+                });
+                console.log('Successfully retrieved info with proxy');
+            }
 
-        io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
+            io.in(this.roomId).emit('track_added', `${socket.socket.data.username} added ${info.videoDetails.title} to the queue.`);
 
-        const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
+            const format = ytdl.chooseFormat(info.formats, { quality: 'highestaudio' });
 
-        this.tracks.push({
-            url: trackUrl,
-            author: info.videoDetails.author.name,
-            duration: +info.videoDetails.lengthSeconds,
-            name: info.videoDetails.title,
-            thumbnail: info.videoDetails.thumbnails[0].url,
-            bitrate: format.bitrate,
-            id: uuidv4()
-        });
+            this.tracks.push({
+                url: trackUrl,
+                author: info.videoDetails.author.name,
+                duration: +info.videoDetails.lengthSeconds,
+                name: info.videoDetails.title,
+                thumbnail: info.videoDetails.thumbnails[0].url,
+                bitrate: format.bitrate,
+                id: uuidv4()
+            });
 
-        if (!this.getCurrentTrack()) {
-            this.currentTrackId = this.tracks[0].id;
+            if (!this.getCurrentTrack()) {
+                this.currentTrackId = this.tracks[0].id;
+            }
+
+            if (!this.started()) this.play();
+        } catch (error: any) {
+            console.error('Error adding track:', error);
+            io.in(this.roomId).emit('track_error', `Failed to add track: ${error.message}`);
         }
-
-        if (!this.started()) this.play();
     }
 
     modifiyTracks(newTracks: Track[], socketId: string) {
